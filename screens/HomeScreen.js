@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, Button, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
 
@@ -15,6 +15,9 @@ export default class HomeScreen extends React.Component {
   }
 
   fetchRandomDrink = () => {
+    this.setState({
+      loading: true
+    })
     fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php")
       .then(response => response.json())
       .then((responseJson) => {
@@ -37,42 +40,51 @@ export default class HomeScreen extends React.Component {
       <View style={styles.container} >
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
           <View style={styles.welcomeContainer}>
-            {
-              this.state.loading ? null :
+            <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
+              <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
 
-                <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
-                  <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+                {
+                  this.state.loading ?
+
+                    <ActivityIndicator size="large" color="#e0e0e0 " />
+                    :
 
                     <Image source={{ uri: this.state.drink.strDrinkThumb }} style={{ height: '100%', width: '100%' }}></Image>
+                }
 
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+
+                {
+                  this.state.loading ?
+
+                    <ActivityIndicator size="large" color="#e0e0e0 " />
+
+                    :
                     <View style={styles.container}>
 
-                      <Text style={styles.header}>{this.state.strDrink}</Text>
+                      <Text style={styles.h1}>{this.state.drink.strDrink}</Text>
+                      <Text style={styles.p}>{this.state.drink.strInstructions}</Text>
 
                     </View>
+                }
 
 
-                  </TouchableOpacity>
-                </CardFlip>
-
-
-
-            }
+              </TouchableOpacity>
+            </CardFlip>
 
 
           </View>
         </ScrollView>
 
-        <View style={styles.tabBarInfoContainer}>
-          <Text style={styles.tabBarInfoText}>This is a tab bar. You can edit it in:</Text>
+        <Button
+          onPress={() => { this.fetchRandomDrink() }}
+          title="Make Me A New Drink"
+          color="#841584"
+          accessibilityLabel="Learn more about this purple button"
+        />
 
-          <View style={[styles.codeHighlightContainer, styles.navigationFilename]}>
-            <MonoText style={styles.codeHighlightText}>navigation/BottomTabNavigator.js</MonoText>
-          </View>
-        </View>
-      </View>
+      </View >
     );
   }
 }
@@ -120,10 +132,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 10
   },
+  h1: {
+    color: 'black',
+    fontSize: 24
+  },
+  p: {
+    color: 'black',
+    fontSize: 16
+  },
+
   cardContainer: {
-    marginTop: 40,
-    height: 450,
-    width: 300,
+    height: 500,
+    width: 350,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -135,8 +155,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   card: {
-    backgroundColor: 'blue',
-    height: '100%'
+    backgroundColor: '#fff',
+    height: '100%',
+    justifyContent: 'center'
   },
   developmentModeText: {
     marginBottom: 20,

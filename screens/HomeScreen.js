@@ -3,8 +3,64 @@ import * as React from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, Button, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
+import { Icon } from 'react-native-elements'
 
-import { MonoText } from '../components/StyledText';
+
+class Cocktail {
+  constructor(json) {
+    this.name = json.strDrink;
+    this.category = json.strCategory;
+    this.isAlcholic = json.strAlcohlic;
+    this.glassType = json.strGlass;
+    this.image = json.strDrinkThumb;
+    this.instructions = json.strInstructions;
+    this.ingredients = [];
+    this.ingredients.push({ ingredient: json.strIngredient1, measurement: json.strMeasure1 });
+    this.ingredients.push({ ingredient: json.strIngredient2, measurement: json.strMeasure2 });
+    this.ingredients.push({ ingredient: json.strIngredient3, measurement: json.strMeasure3 });
+    this.ingredients.push({ ingredient: json.strIngredient4, measurement: json.strMeasure4 });
+    this.ingredients.push({ ingredient: json.strIngredient5, measurement: json.strMeasure5 });
+    this.ingredients.push({ ingredient: json.strIngredient6, measurement: json.strMeasure6 });
+    this.ingredients.push({ ingredient: json.strIngredient7, measurement: json.strMeasure7 });
+    this.ingredients.push({ ingredient: json.strIngredient8, measurement: json.strMeasure8 });
+    this.ingredients.push({ ingredient: json.strIngredient9, measurement: json.strMeasure9 });
+    this.ingredients.push({ ingredient: json.strIngredient10, measurement: json.strMeasure10 });
+    this.ingredients.push({ ingredient: json.strIngredient11, measurement: json.strMeasure11 });
+    this.ingredients.push({ ingredient: json.strIngredient12, measurement: json.strMeasure12 });
+    this.ingredients.push({ ingredient: json.strIngredient13, measurement: json.strMeasure13 });
+    this.ingredients.push({ ingredient: json.strIngredient14, measurement: json.strMeasure14 });
+    this.ingredients.push({ ingredient: json.strIngredient15, measurement: json.strMeasure15 });
+
+
+  }
+
+  getIngredients() {
+    let str = '';
+    for (let i = 0; i < this.ingredients.length; i++) {
+      if (this.ingredients[i].measurement != null) {
+        str += ` ${this.ingredients[i].measurement}`;
+      }
+
+      if (this.ingredients[i].ingredient != null) {
+        str += ` ${this.ingredients[i].ingredient}\n`;
+      } else {
+        break;
+      }
+    }
+    return str;
+  }
+
+  getGlassString() {
+    return `You would typically enjoy this drink in a ${this.glassType}`
+  }
+
+  getCategoryString() {
+    return `Category: ${this.category}`;
+  }
+
+
+
+}
 
 
 export default class HomeScreen extends React.Component {
@@ -16,22 +72,27 @@ export default class HomeScreen extends React.Component {
 
   fetchRandomDrink = () => {
     this.setState({
-      loading: true
+      loading: true,
+      liked: false
     })
     fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php")
       .then(response => response.json())
       .then((responseJson) => {
+
+
+        let cocktail = new Cocktail(responseJson.drinks[0]);
+
         this.setState({
           loading: false,
-          drink: responseJson.drinks[0]
+          cocktail: cocktail
         });
-        console.log(responseJson);
       })
       .catch(error => console.log(error))
   }
 
   state = {
-    loading: true
+    loading: true,
+    liked: false
   }
 
   render() {
@@ -48,8 +109,21 @@ export default class HomeScreen extends React.Component {
 
                     <ActivityIndicator size="large" color="#e0e0e0 " />
                     :
+                    <View>
 
-                    <Image source={{ uri: this.state.drink.strDrinkThumb }} style={{ height: '100%', width: '100%' }}></Image>
+                      <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
+
+                      <Icon
+                        reverse
+                        raised
+                        name='heart'
+                        type='font-awesome'
+                        color={this.state.liked ? '#f50057' : '#fff'}
+                        iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                        containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                        onPress={() => this.setState({ liked: !this.state.liked })} />
+
+                    </View>
                 }
 
               </TouchableOpacity>
@@ -63,8 +137,30 @@ export default class HomeScreen extends React.Component {
                     :
                     <View style={styles.container}>
 
-                      <Text style={styles.h1}>{this.state.drink.strDrink}</Text>
-                      <Text style={styles.p}>{this.state.drink.strInstructions}</Text>
+
+                      <Text style={styles.h1}>{this.state.cocktail.name}</Text>
+                      <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
+
+                      </View>
+
+
+
+                      <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
+
+                      <Text style={styles.p}>{this.state.cocktail.instructions}</Text>
+
+                      <Text style={styles.p}>{this.state.cocktail.getGlassString()}</Text>
+                      <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
+
+                      <Icon
+                        reverse
+                        raised
+                        name='heart'
+                        type='font-awesome'
+                        color={this.state.liked ? '#f50057' : '#fff'}
+                        iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                        containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                        onPress={() => this.setState({ liked: !this.state.liked })} />
 
                     </View>
                 }
@@ -132,9 +228,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 10
   },
+  btn: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 75,
+    height: 75,
+    backgroundColor: '#ec407a',
+    borderRadius: 50,
+    bottom: 0,
+    right: 0,
+    margin: 20
+  },
   h1: {
     color: 'black',
-    fontSize: 24
+    fontSize: 24,
   },
   p: {
     color: 'black',
@@ -155,9 +263,10 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#fafafa',
     height: '100%',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    overflow: 'hidden'
   },
   developmentModeText: {
     marginBottom: 20,

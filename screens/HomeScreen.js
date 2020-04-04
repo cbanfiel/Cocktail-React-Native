@@ -4,6 +4,7 @@ import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, Button, Acti
 import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
 import { Icon } from 'react-native-elements'
+import Layout from '../constants/Layout';
 
 
 class Cocktail {
@@ -70,6 +71,7 @@ export default class HomeScreen extends React.Component {
     this.fetchRandomDrink();
   }
 
+
   fetchRandomDrink = () => {
     this.setState({
       loading: true,
@@ -106,8 +108,10 @@ export default class HomeScreen extends React.Component {
 
                 {
                   this.state.loading ?
+                    <View style={styles.activityIndicator}>
 
-                    <ActivityIndicator size="large" color="#e0e0e0 " />
+                      <ActivityIndicator size="large" color="#e0e0e0 " />
+                    </View>
                     :
                     <View>
 
@@ -131,11 +135,12 @@ export default class HomeScreen extends React.Component {
 
                 {
                   this.state.loading ?
+                    <View style={styles.activityIndicator}>
 
-                    <ActivityIndicator size="large" color="#e0e0e0 " />
-
+                      <ActivityIndicator size="large" color="#e0e0e0 " />
+                    </View>
                     :
-                    <View style={styles.container}>
+                    <View style={styles.card}>
 
 
                       <Text style={styles.h1}>{this.state.cocktail.name}</Text>
@@ -170,15 +175,16 @@ export default class HomeScreen extends React.Component {
             </CardFlip>
 
 
+
           </View>
         </ScrollView>
+        <TouchableOpacity onPress={() => this.fetchRandomDrink()}>
+          <View style={styles.newDrinkBtn}>
+            <Text style={styles.newDrinkBtnTxt}>make me a drink</Text>
 
-        <Button
-          onPress={() => { this.fetchRandomDrink() }}
-          title="Make Me A New Drink"
-          color="#841584"
-          accessibilityLabel="Learn more about this purple button"
-        />
+          </View>
+
+        </TouchableOpacity>
 
       </View >
     );
@@ -189,84 +195,68 @@ HomeScreen.navigationOptions = {
   header: null,
 };
 
-function DevelopmentModeNotice() {
-  if (__DEV__) {
-    const learnMoreButton = (
-      <Text onPress={handleLearnMorePress} style={styles.helpLinkText}>
-        Learn more
-      </Text>
-    );
-
-    return (
-      <Text style={styles.developmentModeText}>
-        Development mode is enabled: your app will be slower but you can use useful development
-        tools. {learnMoreButton}
-      </Text>
-    );
-  } else {
-    return (
-      <Text style={styles.developmentModeText}>
-        You are not in development mode: your app will run at full speed.
-      </Text>
-    );
-  }
-}
-
-function handleLearnMorePress() {
-  WebBrowser.openBrowserAsync('https://docs.expo.io/versions/latest/workflow/development-mode/');
-}
-
-function handleHelpPress() {
-  WebBrowser.openBrowserAsync(
-    'https://docs.expo.io/versions/latest/get-started/create-a-new-app/#making-your-first-change'
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 10
+    backgroundColor: '#ffd54f',
+    padding: 10,
+    flexDirection: 'column'
   },
-  btn: {
-    position: 'absolute',
-    alignItems: 'center',
+  activityIndicator: { height: '100%', width: '100%', justifyContent: 'center' },
+  newDrinkBtn: {
+    marginBottom: 30,
+    backgroundColor: '#fefefe',
+    borderRadius: 20,
     justifyContent: 'center',
-    width: 75,
-    height: 75,
-    backgroundColor: '#ec407a',
-    borderRadius: 50,
-    bottom: 0,
-    right: 0,
-    margin: 20
+    alignItems: 'center',
+    width: '60%',
+    alignSelf: 'center',
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+
+    elevation: 8,
+  },
+  newDrinkBtnTxt: {
+    fontFamily: 'merriweather-light',
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#64b5f6',
   },
   h1: {
     color: 'black',
-    fontSize: 24,
+    fontSize: 18,
+    fontFamily: 'merriweather-light'
   },
   p: {
     color: 'black',
-    fontSize: 16
+    fontSize: 14,
+    fontFamily: 'merriweather-light'
   },
 
   cardContainer: {
+    marginTop: 70,
     height: 500,
     width: 350,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
 
-    elevation: 10,
+    elevation: 8,
   },
   card: {
+    flex: 1,
     backgroundColor: '#fafafa',
-    height: '100%',
-    justifyContent: 'center',
-    overflow: 'hidden'
+    padding: 10,
   },
   developmentModeText: {
     marginBottom: 20,
@@ -280,6 +270,7 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 10,
     marginBottom: 20,
   },

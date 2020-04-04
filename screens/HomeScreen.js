@@ -1,12 +1,14 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, Button, ActivityIndicator } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Animated, Dimensions } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
 import { Icon } from 'react-native-elements'
 import Layout from '../constants/Layout';
+import * as FileSystem from 'expo-file-system';
 
-
+const screenWidth = Math.round(Dimensions.get('window').width);
+const DURATION = 500;
 class Cocktail {
   constructor(json) {
     this.name = json.strDrink;
@@ -14,6 +16,7 @@ class Cocktail {
     this.isAlcholic = json.strAlcohlic;
     this.glassType = json.strGlass;
     this.image = json.strDrinkThumb;
+    this.id = json.idDrink;
     this.instructions = json.strInstructions;
     this.ingredients = [];
     this.ingredients.push({ ingredient: json.strIngredient1, measurement: json.strMeasure1 });
@@ -35,6 +38,8 @@ class Cocktail {
 
   }
 
+
+
   getIngredients() {
     let str = '';
     for (let i = 0; i < this.ingredients.length; i++) {
@@ -52,7 +57,7 @@ class Cocktail {
   }
 
   getGlassString() {
-    return `You would typically enjoy this drink in a ${this.glassType}`
+    return `You would typically enjoy this drink in a ${this.glassType.toLowerCase()}`
   }
 
   getCategoryString() {
@@ -66,9 +71,68 @@ class Cocktail {
 
 export default class HomeScreen extends React.Component {
 
+  saveToFileSystem = async (id) => {
+    let name = "favorites/" + id
+    const path = `${FileSystem.documentDirectory}${name}`;
+    const saving = await FileSystem.writeAsStringAsync(path, id).then(() => {
+      console.log('saved');
+    }).catch((err) => {
+      console.log(err);
+    });
+  }
+
+  deleteFromFileSystem = async (id) => {
+    const load = FileSystem.deleteAsync(FileSystem.documentDirectory + "favorites/" + id).then((value) => {
+      // console.log(value);
+    }).catch((err) => {
+      console.log(err);
+    });
+  };
 
   componentDidMount = () => {
+    const loadDir = FileSystem.readDirectoryAsync(FileSystem.documentDirectory + "favorites/").then((value) => {
+      this.setState({ keys: value })
+      console.log(value[0]);
+    }).catch((err) => {
+      FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + "favorites/").then((value) => {
+        console.log(value);
+      }).catch((error) => {
+        console.log(error);
+      });
+    });
     this.fetchRandomDrink();
+    this.preloadNextDrink();
+
+  }
+
+  preloadNextDrink = () => {
+    this.setState({
+      preloaded: false
+    })
+    fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php")
+      .then(response => response.json())
+      .then((responseJson) => {
+
+
+        let cocktail = new Cocktail(responseJson.drinks[0]);
+        Image.prefetch(cocktail.image).then(() => {
+          if (this.state.keys.includes(cocktail.id)) {
+            this.setState({
+              liked: true
+            })
+          }
+          this.setState({
+            preloaded: true,
+            cocktail2: cocktail
+          });
+        })
+      })
+      .catch(error => console.log(error))
+  }
+
+  nextDrink = () => {
+    this.slideLeft();
+
   }
 
 
@@ -83,18 +147,67 @@ export default class HomeScreen extends React.Component {
 
 
         let cocktail = new Cocktail(responseJson.drinks[0]);
-
-        this.setState({
-          loading: false,
-          cocktail: cocktail
-        });
+        Image.prefetch(cocktail.image).then(() => {
+          this.setState({
+            loading: false,
+            cocktail: cocktail
+          });
+        })
       })
       .catch(error => console.log(error))
   }
 
+  slideLeft = () => {
+    return Animated.parallel([
+      Animated.timing(this.state.slide, {
+        toValue: 1,
+        duration: DURATION,
+        useNativeDriver: true
+      }),
+    ]).start(() => {
+      this.setState({
+        cocktail: this.state.cocktail2,
+        liked: false
+      });
+      this.preloadNextDrink();
+      this.slideIn();
+    });
+  }
+
+  slideIn = () => {
+
+    this.setState({ positionX: screenWidth }, () => {
+      return Animated.parallel([
+        Animated.timing(this.state.slide, {
+          toValue: 0,
+          duration: DURATION,
+          useNativeDriver: true
+        }),
+      ]).start(() => {
+        this.setState({
+          positionX: screenWidth * -1
+        })
+      });
+    })
+
+  }
+
+  favorite = () => {
+    let liked = !this.state.liked;
+    if (liked) {
+      this.saveToFileSystem(this.state.cocktail.id);
+    } else {
+      this.deleteFromFileSystem(this.state.cocktail.id);
+    }
+    this.setState({ liked: liked });
+  }
+
   state = {
+    slide: new Animated.Value(0),
     loading: true,
-    liked: false
+    liked: false,
+    preloaded: false,
+    positionX: screenWidth * -1
   }
 
   render() {
@@ -102,85 +215,99 @@ export default class HomeScreen extends React.Component {
     return (
       <View style={styles.container} >
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-          <View style={styles.welcomeContainer}>
-            <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
-              <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
-
-                {
-                  this.state.loading ?
-                    <View style={styles.activityIndicator}>
-
-                      <ActivityIndicator size="large" color="#e0e0e0 " />
-                    </View>
-                    :
-                    <View>
-
-                      <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
-
-                      <Icon
-                        reverse
-                        raised
-                        name='heart'
-                        type='font-awesome'
-                        color={this.state.liked ? '#f50057' : '#fff'}
-                        iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                        containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                        onPress={() => this.setState({ liked: !this.state.liked })} />
-
-                    </View>
-                }
-
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
-
-                {
-                  this.state.loading ?
-                    <View style={styles.activityIndicator}>
-
-                      <ActivityIndicator size="large" color="#e0e0e0 " />
-                    </View>
-                    :
-                    <View style={styles.card}>
+          <Animated.View style={{
+            transform: [
+              {
+                translateX: this.state.slide.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, this.state.positionX]
+                })
+              }
+            ]
+          }}>
 
 
-                      <Text style={styles.h1}>{this.state.cocktail.name}</Text>
-                      <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
+            <View style={styles.welcomeContainer}>
+              <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
+                <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+
+                  {
+                    this.state.loading ?
+                      <View style={styles.activityIndicator}>
+
+                        <ActivityIndicator size="large" color="#e0e0e0 " />
+                      </View>
+                      :
+                      <View>
+
+                        <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
+
+                        <Icon
+                          reverse
+                          raised
+                          name='heart'
+                          type='font-awesome'
+                          color={this.state.liked ? '#f50057' : '#fff'}
+                          iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                          containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                          onPress={() => this.favorite()} />
 
                       </View>
+                  }
+
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+
+                  {
+                    this.state.loading ?
+                      <View style={styles.activityIndicator}>
+
+                        <ActivityIndicator size="large" color="#e0e0e0 " />
+                      </View>
+                      :
+                      <View style={styles.card}>
+
+
+                        <Text style={styles.h1}>{this.state.cocktail.name}</Text>
+                        <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
+
+                        </View>
 
 
 
-                      <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
+                        <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
 
-                      <Text style={styles.p}>{this.state.cocktail.instructions}</Text>
+                        <Text style={styles.p}>{this.state.cocktail.instructions + "\n"}</Text>
 
-                      <Text style={styles.p}>{this.state.cocktail.getGlassString()}</Text>
-                      <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
+                        <Text style={styles.p}>{this.state.cocktail.getGlassString() + "\n"}</Text>
+                        <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
 
-                      <Icon
-                        reverse
-                        raised
-                        name='heart'
-                        type='font-awesome'
-                        color={this.state.liked ? '#f50057' : '#fff'}
-                        iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                        containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                        onPress={() => this.setState({ liked: !this.state.liked })} />
+                        <Icon
+                          reverse
+                          raised
+                          name='heart'
+                          type='font-awesome'
+                          color={this.state.liked ? '#f50057' : '#fff'}
+                          iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                          containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                          onPress={() => this.favorite()} />
 
-                    </View>
-                }
-
-
-              </TouchableOpacity>
-            </CardFlip>
+                      </View>
+                  }
 
 
+                </TouchableOpacity>
+              </CardFlip>
 
-          </View>
+
+
+            </View>
+          </Animated.View>
+
         </ScrollView>
-        <TouchableOpacity onPress={() => this.fetchRandomDrink()}>
+        <TouchableOpacity onPress={() => this.nextDrink()}>
           <View style={styles.newDrinkBtn}>
-            <Text style={styles.newDrinkBtnTxt}>make me a drink</Text>
+            <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
 
           </View>
 
@@ -226,7 +353,7 @@ const styles = StyleSheet.create({
     fontFamily: 'merriweather-light',
     fontSize: 18,
     textAlign: 'center',
-    color: '#64b5f6',
+    color: '#42a5f5',
   },
   h1: {
     color: 'black',

@@ -8,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import BottomTabNavigator from './navigation/BottomTabNavigator';
 import useLinking from './navigation/useLinking';
+import HomeScreen from './screens/HomeScreen';
 
 const Stack = createStackNavigator();
 
@@ -48,7 +49,7 @@ export default function App(props) {
   } else {
     return (
       <View style={styles.container}>
-        {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+        {/* {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
         <NavigationContainer ref={containerRef} initialState={initialNavigationState}>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Root" component={BottomTabNavigator} options={
@@ -59,7 +60,8 @@ export default function App(props) {
               }
             } />
           </Stack.Navigator>
-        </NavigationContainer>
+        </NavigationContainer> */}
+        <HomeScreen></HomeScreen>
       </View>
     );
   }

@@ -1,19 +1,22 @@
 import * as FileSystem from 'expo-file-system';
 
 
-export const saveToFileSystem = async(id) => {
+export const saveToFileSystem = async(id, _callback) => {
     let name = "favorites/" + id
     const path = `${FileSystem.documentDirectory}${name}`;
     const saving = await FileSystem.writeAsStringAsync(path, id).then(() => {
         console.log('saved');
+        _callback();
+
     }).catch((err) => {
         console.log(err);
     });
 }
 
-export const deleteFromFileSystem = async(id) => {
+export const deleteFromFileSystem = async(id, _callback) => {
     const load = FileSystem.deleteAsync(FileSystem.documentDirectory + "favorites/" + id).then((value) => {
         // console.log(value);
+        _callback();
     }).catch((err) => {
         console.log(err);
     });

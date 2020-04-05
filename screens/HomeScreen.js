@@ -5,100 +5,21 @@ import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
 import { Icon } from 'react-native-elements'
 import Layout from '../constants/Layout';
-import * as FileSystem from 'expo-file-system';
+import { Cocktail } from '../classes/Cocktail';
+import * as FileSystem from '../classes/FileSystem';
 
 const screenWidth = Math.round(Dimensions.get('window').width);
 const DURATION = 500;
-class Cocktail {
-  constructor(json) {
-    this.name = json.strDrink;
-    this.category = json.strCategory;
-    this.isAlcholic = json.strAlcohlic;
-    this.glassType = json.strGlass;
-    this.image = json.strDrinkThumb;
-    this.id = json.idDrink;
-    this.instructions = json.strInstructions;
-    this.ingredients = [];
-    this.ingredients.push({ ingredient: json.strIngredient1, measurement: json.strMeasure1 });
-    this.ingredients.push({ ingredient: json.strIngredient2, measurement: json.strMeasure2 });
-    this.ingredients.push({ ingredient: json.strIngredient3, measurement: json.strMeasure3 });
-    this.ingredients.push({ ingredient: json.strIngredient4, measurement: json.strMeasure4 });
-    this.ingredients.push({ ingredient: json.strIngredient5, measurement: json.strMeasure5 });
-    this.ingredients.push({ ingredient: json.strIngredient6, measurement: json.strMeasure6 });
-    this.ingredients.push({ ingredient: json.strIngredient7, measurement: json.strMeasure7 });
-    this.ingredients.push({ ingredient: json.strIngredient8, measurement: json.strMeasure8 });
-    this.ingredients.push({ ingredient: json.strIngredient9, measurement: json.strMeasure9 });
-    this.ingredients.push({ ingredient: json.strIngredient10, measurement: json.strMeasure10 });
-    this.ingredients.push({ ingredient: json.strIngredient11, measurement: json.strMeasure11 });
-    this.ingredients.push({ ingredient: json.strIngredient12, measurement: json.strMeasure12 });
-    this.ingredients.push({ ingredient: json.strIngredient13, measurement: json.strMeasure13 });
-    this.ingredients.push({ ingredient: json.strIngredient14, measurement: json.strMeasure14 });
-    this.ingredients.push({ ingredient: json.strIngredient15, measurement: json.strMeasure15 });
 
-
-  }
-
-
-
-  getIngredients() {
-    let str = '';
-    for (let i = 0; i < this.ingredients.length; i++) {
-      if (this.ingredients[i].measurement != null) {
-        str += ` ${this.ingredients[i].measurement}`;
-      }
-
-      if (this.ingredients[i].ingredient != null) {
-        str += ` ${this.ingredients[i].ingredient}\n`;
-      } else {
-        break;
-      }
-    }
-    return str;
-  }
-
-  getGlassString() {
-    return `You would typically enjoy this drink in a ${this.glassType.toLowerCase()}`
-  }
-
-  getCategoryString() {
-    return `Category: ${this.category}`;
-  }
-
-
-
-}
 
 
 export default class HomeScreen extends React.Component {
 
-  saveToFileSystem = async (id) => {
-    let name = "favorites/" + id
-    const path = `${FileSystem.documentDirectory}${name}`;
-    const saving = await FileSystem.writeAsStringAsync(path, id).then(() => {
-      console.log('saved');
-    }).catch((err) => {
-      console.log(err);
-    });
-  }
 
-  deleteFromFileSystem = async (id) => {
-    const load = FileSystem.deleteAsync(FileSystem.documentDirectory + "favorites/" + id).then((value) => {
-      // console.log(value);
-    }).catch((err) => {
-      console.log(err);
-    });
-  };
 
   componentDidMount = () => {
-    const loadDir = FileSystem.readDirectoryAsync(FileSystem.documentDirectory + "favorites/").then((value) => {
-      this.setState({ keys: value })
-      console.log(value[0]);
-    }).catch((err) => {
-      FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + "favorites/").then((value) => {
-        console.log(value);
-      }).catch((error) => {
-        console.log(error);
-      });
+    FileSystem.loadFromFileSystem((keys) => {
+      this.setState({ keys: keys });
     });
     this.fetchRandomDrink();
     this.preloadNextDrink();
@@ -112,8 +33,6 @@ export default class HomeScreen extends React.Component {
     fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php")
       .then(response => response.json())
       .then((responseJson) => {
-
-
         let cocktail = new Cocktail(responseJson.drinks[0]);
         Image.prefetch(cocktail.image).then(() => {
           if (this.state.keys.includes(cocktail.id)) {
@@ -131,8 +50,8 @@ export default class HomeScreen extends React.Component {
   }
 
   nextDrink = () => {
+    this.setState({ buttonDisabled: true })
     this.slideLeft();
-
   }
 
 
@@ -144,8 +63,6 @@ export default class HomeScreen extends React.Component {
     fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php")
       .then(response => response.json())
       .then((responseJson) => {
-
-
         let cocktail = new Cocktail(responseJson.drinks[0]);
         Image.prefetch(cocktail.image).then(() => {
           this.setState({
@@ -185,7 +102,8 @@ export default class HomeScreen extends React.Component {
         }),
       ]).start(() => {
         this.setState({
-          positionX: screenWidth * -1
+          positionX: screenWidth * -1,
+          buttonDisabled: false
         })
       });
     })
@@ -195,9 +113,9 @@ export default class HomeScreen extends React.Component {
   favorite = () => {
     let liked = !this.state.liked;
     if (liked) {
-      this.saveToFileSystem(this.state.cocktail.id);
+      FileSystem.saveToFileSystem(this.state.cocktail.id);
     } else {
-      this.deleteFromFileSystem(this.state.cocktail.id);
+      FileSystem.deleteFromFileSystem(this.state.cocktail.id);
     }
     this.setState({ liked: liked });
   }
@@ -305,7 +223,7 @@ export default class HomeScreen extends React.Component {
           </Animated.View>
 
         </ScrollView>
-        <TouchableOpacity onPress={() => this.nextDrink()}>
+        <TouchableOpacity onPress={this.state.buttonDisabled ? null : () => this.nextDrink()}>
           <View style={styles.newDrinkBtn}>
             <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
 

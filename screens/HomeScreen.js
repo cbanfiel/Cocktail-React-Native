@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Animated, Dimensions } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Animated, Dimensions, Alert } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import CardFlip from 'react-native-card-flip';
 import { Icon } from 'react-native-elements'
@@ -19,19 +19,22 @@ export default class HomeScreen extends React.Component {
 
   componentDidMount = () => {
     FileSystem.loadFromFileSystem((keys) => {
-      this.setState({ keys: keys });
+      this.setState({ keys: keys, favoriteButtonDisabled: false });
     });
     this.fetchRandomDrink();
   }
 
   nextDrink = () => {
+    if (this.state.loading) {
+      return;
+    }
     this.setState({ buttonDisabled: true })
     this.slideLeft();
   }
 
   fetchRandomDrink = () => {
     this.setState({
-      preloaded: false
+      preloaded: false,
     })
     let link = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
@@ -69,12 +72,21 @@ export default class HomeScreen extends React.Component {
             return;
           }
           this.setState({
+            loading: false,
             preloaded: true,
             cocktail2: cocktail
           });
         })
       })
-      .catch(error => console.log(error))
+      .catch(error => {
+        this.setState({
+          loading: true
+        })
+        console.log(error)
+        setTimeout(() => {
+          this.fetchRandomDrink();
+        }, 1000);
+      });
   }
 
   slideLeft = () => {
@@ -128,6 +140,9 @@ export default class HomeScreen extends React.Component {
   }
 
   favoriteMode = () => {
+    if (this.state.favoriteButtonDisabled) {
+      return;
+    }
     let favoriteMode = !this.state.favoriteMode;
     this.setState({
       favoriteMode: favoriteMode
@@ -138,6 +153,7 @@ export default class HomeScreen extends React.Component {
   }
 
   favorite = () => {
+
     let liked = !this.state.liked;
     if (liked) {
       FileSystem.saveToFileSystem(this.state.cocktail.id, () => {
@@ -164,7 +180,8 @@ export default class HomeScreen extends React.Component {
     favoritesIndex: 0,
     cocktail: null,
     favoriteMode: false,
-    isNextLiked: false
+    isNextLiked: false,
+    favoriteButtonDisabled: true
   }
 
   render() {
@@ -202,7 +219,7 @@ export default class HomeScreen extends React.Component {
                       :
                       this.state.emptyFavorites ?
 
-                        <View>
+                        <View style={styles.card}>
                           <Text style={styles.h1}>{"Favorites List\n"}</Text>
                           <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
 
@@ -238,7 +255,7 @@ export default class HomeScreen extends React.Component {
                       :
                       this.state.emptyFavorites ?
 
-                        <View>
+                        <View style={styles.card}>
                           <Text style={styles.h1}>{"Favorites List\n"}</Text>
                           <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
 

@@ -7,6 +7,10 @@ import { Icon } from 'react-native-elements'
 import Layout from '../constants/Layout';
 import { Cocktail } from '../classes/Cocktail';
 import * as FileSystem from '../classes/FileSystem';
+import NativeAdView from "react-native-admob-native-ads";
+import { AdCard } from '../components/AdCard';
+
+
 
 const screenWidth = Math.round(Dimensions.get('window').width);
 const DURATION = 500;
@@ -33,8 +37,19 @@ export default class HomeScreen extends React.Component {
   }
 
   fetchRandomDrink = () => {
+
+    if (this.state.drinksMade == 4) {
+      this.setState({
+        drinksMade: -1,
+        adShown: true
+      });
+      return;
+    }
+
+
     this.setState({
       preloaded: false,
+      adShown: false
     })
     let link = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
@@ -132,7 +147,8 @@ export default class HomeScreen extends React.Component {
       ]).start(() => {
         this.setState({
           positionX: screenWidth * -1,
-          buttonDisabled: false
+          buttonDisabled: false,
+          drinksMade: this.state.drinksMade + 1
         })
       });
     })
@@ -181,7 +197,8 @@ export default class HomeScreen extends React.Component {
     cocktail: null,
     favoriteMode: false,
     isNextLiked: false,
-    favoriteButtonDisabled: true
+    favoriteButtonDisabled: true,
+    drinksMade: 1
   }
 
   render() {
@@ -189,7 +206,7 @@ export default class HomeScreen extends React.Component {
     return (
       <View style={styles.container} >
 
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <View style={styles.container} contentContainerStyle={styles.contentContainer}>
 
 
 
@@ -219,28 +236,37 @@ export default class HomeScreen extends React.Component {
                       :
                       this.state.emptyFavorites ?
 
-                        <View style={styles.card}>
+                        <View style={[styles.card]}>
                           <Text style={styles.h1}>{"Favorites List\n"}</Text>
                           <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
-
                         </View>
 
                         :
-                        <View>
 
-                          <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
 
-                          <Icon
-                            reverse
-                            raised
-                            name='heart'
-                            type='font-awesome'
-                            color={this.state.liked ? '#f50057' : '#fff'}
-                            iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                            containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                            onPress={() => this.favorite()} />
 
-                        </View>
+                        this.state.adShown ?
+
+                          <AdCard style={[styles.card, styles.ad]} />
+
+                          :
+
+
+                          <View>
+
+                            <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
+
+                            <Icon
+                              reverse
+                              raised
+                              name='heart'
+                              type='font-awesome'
+                              color={this.state.liked ? '#f50057' : '#fff'}
+                              iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                              containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                              onPress={() => this.favorite()} />
+
+                          </View>
                   }
 
                 </TouchableOpacity>
@@ -259,37 +285,48 @@ export default class HomeScreen extends React.Component {
                           <Text style={styles.h1}>{"Favorites List\n"}</Text>
                           <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
 
+
+
+
+
+
                         </View>
 
                         :
-                        <View style={styles.card}>
+
+                        this.state.adShown ?
+
+                          <AdCard style={[styles.card, styles.ad]} />
+
+                          :
+                          <View style={styles.card}>
 
 
-                          <Text style={styles.h1}>{this.state.cocktail.name}</Text>
-                          <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
+                            <Text style={styles.h1}>{this.state.cocktail.name}</Text>
+                            <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
+
+                            </View>
+
+
+
+                            <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
+
+                            <Text style={styles.p}>{this.state.cocktail.instructions + "\n"}</Text>
+
+                            <Text style={styles.p}>{this.state.cocktail.getGlassString() + "\n"}</Text>
+                            <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
+
+                            <Icon
+                              reverse
+                              raised
+                              name='heart'
+                              type='font-awesome'
+                              color={this.state.liked ? '#f50057' : '#fff'}
+                              iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
+                              containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
+                              onPress={() => this.favorite()} />
 
                           </View>
-
-
-
-                          <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
-
-                          <Text style={styles.p}>{this.state.cocktail.instructions + "\n"}</Text>
-
-                          <Text style={styles.p}>{this.state.cocktail.getGlassString() + "\n"}</Text>
-                          <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
-
-                          <Icon
-                            reverse
-                            raised
-                            name='heart'
-                            type='font-awesome'
-                            color={this.state.liked ? '#f50057' : '#fff'}
-                            iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                            containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                            onPress={() => this.favorite()} />
-
-                        </View>
                   }
 
 
@@ -301,7 +338,7 @@ export default class HomeScreen extends React.Component {
             </View>
           </Animated.View>
 
-        </ScrollView>
+        </View>
         <TouchableOpacity onPress={this.state.buttonDisabled ? null : () => this.nextDrink()}>
           <View style={styles.newDrinkBtn}>
             <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
@@ -336,8 +373,15 @@ HomeScreen.navigationOptions = {
 };
 
 const styles = StyleSheet.create({
+  ad: {
+    justifyContent: 'center',
+    alignItems: 'center'
+
+  },
+
   container: {
     flex: 1,
+    paddingTop: 30,
     backgroundColor: '#ffd54f',
     padding: 10,
     flexDirection: 'column',

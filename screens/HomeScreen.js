@@ -9,7 +9,9 @@ import { Cocktail } from '../classes/Cocktail';
 import * as FileSystem from '../classes/FileSystem';
 import NativeAdView from "react-native-admob-native-ads";
 import { AdCard } from '../components/AdCard';
+import ColorPalette from '../components/ColorPalette';
 
+const colors = ['#ffd54f', '#66bb6a', '#4fc3f7', '#9575cd', '#ff5252']
 
 
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -145,10 +147,17 @@ export default class HomeScreen extends React.Component {
           useNativeDriver: true
         }),
       ]).start(() => {
+
+        let drinksMade = this.state.drinksMade + 1;
+        if (this.state.favoriteMode && this.state.emptyFavorites) {
+          //just so u dont get ads after seeing the test card
+          drinksMade--;
+        }
+
         this.setState({
           positionX: screenWidth * -1,
           buttonDisabled: false,
-          drinksMade: this.state.drinksMade + 1
+          drinksMade: drinksMade
         })
       });
     })
@@ -198,18 +207,23 @@ export default class HomeScreen extends React.Component {
     favoriteMode: false,
     isNextLiked: false,
     favoriteButtonDisabled: true,
-    drinksMade: 1
+    drinksMade: 1,
+    colorIndex: 0
+  }
+
+  setColorIndex = (index) => {
+    this.setState({ colorIndex: index });
   }
 
   render() {
 
     return (
-      <View style={styles.container} >
+      <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} >
 
-        <View style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} contentContainerStyle={styles.contentContainer}>
 
 
-
+          <ColorPalette colors={colors} colorIndex={this.state.colorIndex} setColorIndex={this.setColorIndex} />
 
           <Animated.View style={{
             transform: [
@@ -382,7 +396,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 30,
-    backgroundColor: '#ffd54f',
     padding: 10,
     flexDirection: 'column',
     paddingBottom: 30
@@ -445,7 +458,7 @@ const styles = StyleSheet.create({
   },
 
   cardContainer: {
-    marginTop: 70,
+    marginTop: 40,
     height: 500,
     width: 350,
     shadowColor: "#000",

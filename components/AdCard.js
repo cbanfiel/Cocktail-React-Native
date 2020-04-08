@@ -9,7 +9,7 @@ export function AdCard({ style }) {
             <AdMobBanner
                 style={{ margin: 10 }}
                 bannerSize="mediumRectangle"
-                adUnitID={config.largeBannerAdId}
+                adUnitID={config.largeCardBanner}
                 servePersonalizedAds={true}
                 onDidFailToReceiveAdWithError={(err) => { console.log("ERROR: " + err) }}
             />
@@ -17,7 +17,7 @@ export function AdCard({ style }) {
             <AdMobBanner
                 style={{ margin: 10 }}
                 bannerSize="largeBanner"
-                adUnitID={config.bannerAdId}
+                adUnitID={config.smallCardBanner}
                 servePersonalizedAds={true}
                 onDidFailToReceiveAdWithError={(err) => { console.log("ERROR: " + err) }}
             />

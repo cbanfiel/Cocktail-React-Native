@@ -9,6 +9,8 @@ import { Cocktail } from '../classes/Cocktail';
 import * as FileSystem from '../classes/FileSystem';
 import NativeAdView from "react-native-admob-native-ads";
 import { AdCard } from '../components/AdCard';
+import RewardedAd from '../components/RewardedAd';
+
 import ColorPalette from '../components/ColorPalette';
 
 const colors = ['#ffd54f', '#66bb6a', '#4fc3f7', '#9575cd', '#ff5252']
@@ -42,17 +44,14 @@ export default class HomeScreen extends React.Component {
 
     if (this.state.drinksMade == 4) {
       this.setState({
-        drinksMade: -1,
-        adShown: true
+        adShown: true,
+        drinksMade: -1
       });
-      return;
     }
-
 
     this.setState({
       preloaded: false,
-      adShown: false
-    })
+        })
     let link = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
     if (this.state.favoriteMode) {
@@ -91,7 +90,8 @@ export default class HomeScreen extends React.Component {
           this.setState({
             loading: false,
             preloaded: true,
-            cocktail2: cocktail
+            cocktail2: cocktail,
+            adShown: false
           });
         })
       })
@@ -114,15 +114,14 @@ export default class HomeScreen extends React.Component {
         useNativeDriver: true
       }),
     ]).start(() => {
-
       if (this.state.favoriteMode && this.state.keys < 1) {
         this.setState({
-          emptyFavorites: true
+          emptyFavorites: true,
         })
       } else {
         if (this.state.emptyFavorites) {
           this.setState({
-            emptyFavorites: false
+            emptyFavorites: false,
           })
         }
       }
@@ -159,6 +158,13 @@ export default class HomeScreen extends React.Component {
           buttonDisabled: false,
           drinksMade: drinksMade
         })
+
+        if(this.state.buttonDisabled){
+          setTimeout(()=> {
+            this.setState({buttonDisabled: false})
+          }, 5000)
+        }
+
       });
     })
 
@@ -221,7 +227,10 @@ export default class HomeScreen extends React.Component {
       <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} >
 
         <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} contentContainerStyle={styles.contentContainer}>
-
+          
+         {
+           this.state.adShown? <RewardedAd></RewardedAd> : null
+         }
 
           <ColorPalette colors={colors} colorIndex={this.state.colorIndex} setColorIndex={this.setColorIndex} />
 
@@ -238,6 +247,7 @@ export default class HomeScreen extends React.Component {
 
 
             <View style={styles.welcomeContainer}>
+
               <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
                 <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
 
@@ -256,15 +266,6 @@ export default class HomeScreen extends React.Component {
                         </View>
 
                         :
-
-
-
-                        this.state.adShown ?
-
-                          <AdCard style={[styles.card, styles.ad]} />
-
-                          :
-
 
                           <View>
 
@@ -308,11 +309,6 @@ export default class HomeScreen extends React.Component {
 
                         :
 
-                        this.state.adShown ?
-
-                          <AdCard style={[styles.card, styles.ad]} />
-
-                          :
                           <View style={styles.card}>
 
 
@@ -353,13 +349,26 @@ export default class HomeScreen extends React.Component {
           </Animated.View>
 
         </View>
-        <TouchableOpacity onPress={this.state.buttonDisabled ? null : () => this.nextDrink()}>
+        {
+
+        this.state.buttonDisabled  ? 
+        <TouchableOpacity>
+        <View style={styles.newDrinkBtn}>
+          <ActivityIndicator></ActivityIndicator>
+
+        </View>
+
+      </TouchableOpacity>
+        
+        : 
+        <TouchableOpacity onPress={this.state.buttonDisabled? null : () => this.nextDrink()}>
           <View style={styles.newDrinkBtn}>
             <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
 
           </View>
 
         </TouchableOpacity>
+        }
 
         <TouchableOpacity onPress={() => this.favoriteMode()}>
           <View style={[styles.favoriteModeBtn, { backgroundColor: this.state.favoriteMode ? '#f50057' : '#fff' }]}>

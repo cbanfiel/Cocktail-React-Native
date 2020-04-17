@@ -9,8 +9,8 @@ import { Cocktail } from '../classes/Cocktail';
 import * as FileSystem from '../classes/FileSystem';
 import NativeAdView from "react-native-admob-native-ads";
 import { AdCard } from '../components/AdCard';
-import RewardedAd from '../components/RewardedAd';
-
+import { AdMobInterstitial } from "expo-ads-admob";
+import * as config from '../config';
 import ColorPalette from '../components/ColorPalette';
 
 const colors = ['#ffd54f', '#66bb6a', '#4fc3f7', '#9575cd', '#ff5252']
@@ -25,11 +25,34 @@ export default class HomeScreen extends React.Component {
 
 
 
-  componentDidMount = () => {
+   componentDidMount = async () => {
     FileSystem.loadFromFileSystem((keys) => {
       this.setState({ keys: keys, favoriteButtonDisabled: false });
     });
     this.fetchRandomDrink();
+    this.loadAd();
+
+  }
+
+
+  showAd = async () => {
+    await AdMobInterstitial.showAdAsync();
+  }
+
+  loadAd = async () => {
+    try{
+      AdMobInterstitial.setAdUnitID(config.interstitalAd); 
+      AdMobInterstitial.addEventListener('interstitialDidLoad', () => {
+          this.setState({adLoaded: true});
+      })
+      AdMobInterstitial.addEventListener('interstitialDidClose', async () => {
+        this.setState({adLoaded: false, showAd: false});
+        await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true })
+      })
+      await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true })
+    }catch(e){
+      console.log('Ad already loaded');
+    }
   }
 
   nextDrink = () => {
@@ -41,10 +64,9 @@ export default class HomeScreen extends React.Component {
   }
 
   fetchRandomDrink = () => {
-
-    if (this.state.drinksMade == 4) {
+    if (this.state.drinksMade == 7) {
       this.setState({
-        adShown: true,
+        showAd: true,
         drinksMade: -1
       });
     }
@@ -91,7 +113,6 @@ export default class HomeScreen extends React.Component {
             loading: false,
             preloaded: true,
             cocktail2: cocktail,
-            adShown: false
           });
         })
       })
@@ -228,10 +249,6 @@ export default class HomeScreen extends React.Component {
 
         <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} contentContainerStyle={styles.contentContainer}>
           
-         {
-           this.state.adShown? <RewardedAd></RewardedAd> : null
-         }
-
           <ColorPalette colors={colors} colorIndex={this.state.colorIndex} setColorIndex={this.setColorIndex} />
 
           <Animated.View style={{
@@ -361,7 +378,8 @@ export default class HomeScreen extends React.Component {
       </TouchableOpacity>
         
         : 
-        <TouchableOpacity onPress={this.state.buttonDisabled? null : () => this.nextDrink()}>
+        <TouchableOpacity onPress={ this.state.adLoaded && this.state.showAd ? () => this.showAd() : () => {this.nextDrink()
+        }}>
           <View style={styles.newDrinkBtn}>
             <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
 

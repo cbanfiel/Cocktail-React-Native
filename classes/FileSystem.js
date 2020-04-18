@@ -5,11 +5,33 @@ export const saveToFileSystem = async(id, _callback) => {
     let name = "favorites/" + id
     const path = `${FileSystem.documentDirectory}${name}`;
     const saving = await FileSystem.writeAsStringAsync(path, id).then(() => {
-        console.log('saved');
+        console.log('Saved Favorite');
         _callback();
 
     }).catch((err) => {
         console.log(err);
+    });
+}
+
+export const saveSettings = async(data) => {
+    let name = 'settings.json'
+    const path = `${FileSystem.documentDirectory}${name}`;
+    const saving = await FileSystem.writeAsStringAsync(path, data).then(() => {
+        console.log('Saved Settings');
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
+export const loadSettings = (_callback) => {
+    const loadDir = FileSystem.readAsStringAsync(FileSystem.documentDirectory + "settings.json").then((value) => {
+        _callback(value);
+    }).catch((err) => {
+        FileSystem.writeAsStringAsync(FileSystem.documentDirectory + "settings.json", JSON.stringify({colorIndex: 0})).then((value) => {
+            console.log(value);
+        }).catch((error) => {
+            console.log(error);
+        });
     });
 }
 

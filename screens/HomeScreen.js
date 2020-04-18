@@ -1,79 +1,88 @@
-import * as WebBrowser from 'expo-web-browser';
-import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Animated, Dimensions, Alert } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import CardFlip from 'react-native-card-flip';
-import { Icon } from 'react-native-elements'
-import Layout from '../constants/Layout';
-import { Cocktail } from '../classes/Cocktail';
-import * as FileSystem from '../classes/FileSystem';
+import * as WebBrowser from "expo-web-browser";
+import * as React from "react";
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Alert,
+} from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
+import CardFlip from "react-native-card-flip";
+import { Icon } from "react-native-elements";
+import Layout from "../constants/Layout";
+import { Cocktail } from "../classes/Cocktail";
+import * as FileSystem from "../classes/FileSystem";
 import NativeAdView from "react-native-admob-native-ads";
-import { AdCard } from '../components/AdCard';
+import { AdCard } from "../components/AdCard";
 import { AdMobInterstitial } from "expo-ads-admob";
-import * as config from '../config';
-import ColorPalette from '../components/ColorPalette';
+import * as config from "../config";
+import ColorPalette from "../components/ColorPalette";
 
-const colors = ['#ffd54f', '#66bb6a', '#4fc3f7', '#9575cd', '#ff5252']
+const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 
-
-const screenWidth = Math.round(Dimensions.get('window').width);
+const screenWidth = Math.round(Dimensions.get("window").width);
 const DURATION = 500;
 
-
-
 export default class HomeScreen extends React.Component {
-
-
-
-   componentDidMount = async () => {
+  componentDidMount = async () => {
     FileSystem.loadFromFileSystem((keys) => {
       this.setState({ keys: keys, favoriteButtonDisabled: false });
     });
+
+    FileSystem.loadSettings((data) => {
+      let colorIndex = JSON.parse(data).colorIndex;
+      this.setState({colorIndex: colorIndex})
+    })
+
     this.fetchRandomDrink();
     this.loadAd();
-
-  }
-
+  };
 
   showAd = async () => {
     await AdMobInterstitial.showAdAsync();
-  }
+  };
 
   loadAd = async () => {
-    try{
-      AdMobInterstitial.setAdUnitID(config.interstitalAd); 
-      AdMobInterstitial.addEventListener('interstitialDidLoad', () => {
-          this.setState({adLoaded: true});
-      })
-      AdMobInterstitial.addEventListener('interstitialDidClose', async () => {
-        this.setState({adLoaded: false, showAd: false});
-        await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true })
-      })
-      await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true })
-    }catch(e){
-      console.log('Ad already loaded');
+    try {
+      AdMobInterstitial.setAdUnitID(config.interstitalAd);
+      AdMobInterstitial.addEventListener("interstitialDidLoad", () => {
+        this.setState({ adLoaded: true });
+      });
+      AdMobInterstitial.addEventListener("interstitialDidClose", async () => {
+        this.setState({ adLoaded: false, showAd: false });
+        await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
+      });
+      await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
+    } catch (e) {
+      console.log("Ad already loaded");
     }
-  }
+  };
 
   nextDrink = () => {
     if (this.state.loading) {
       return;
     }
-    this.setState({ buttonDisabled: true })
+    this.setState({ buttonDisabled: true });
     this.slideLeft();
-  }
+  };
 
   fetchRandomDrink = () => {
     if (this.state.drinksMade == 7) {
       this.setState({
         showAd: true,
-        drinksMade: -1
+        drinksMade: -1,
       });
     }
 
     this.setState({
       preloaded: false,
-        })
+    });
     let link = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
 
     if (this.state.favoriteMode) {
@@ -86,27 +95,29 @@ export default class HomeScreen extends React.Component {
         newIndex = 0;
       }
       this.setState({
-        favoritesIndex: newIndex
+        favoritesIndex: newIndex,
       });
 
       if (keys.length < 1) {
-
         return;
       }
     }
 
     fetch(link)
-      .then(response => response.json())
+      .then((response) => response.json())
       .then((responseJson) => {
         let cocktail = new Cocktail(responseJson.drinks[0]);
         Image.prefetch(cocktail.image).then(() => {
           if (this.state.cocktail === null) {
-            this.setState({
-              loading: false,
-              cocktail: cocktail
-            }, () => {
-              this.fetchRandomDrink();
-            });
+            this.setState(
+              {
+                loading: false,
+                cocktail: cocktail,
+              },
+              () => {
+                this.fetchRandomDrink();
+              }
+            );
             return;
           }
           this.setState({
@@ -114,60 +125,57 @@ export default class HomeScreen extends React.Component {
             preloaded: true,
             cocktail2: cocktail,
           });
-        })
+        });
       })
-      .catch(error => {
+      .catch((error) => {
         this.setState({
-          loading: true
-        })
-        console.log(error)
+          loading: true,
+        });
+        console.log(error);
         setTimeout(() => {
           this.fetchRandomDrink();
         }, 1000);
       });
-  }
+  };
 
   slideLeft = () => {
     return Animated.parallel([
       Animated.timing(this.state.slide, {
         toValue: 1,
         duration: DURATION,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
     ]).start(() => {
       if (this.state.favoriteMode && this.state.keys < 1) {
         this.setState({
           emptyFavorites: true,
-        })
+        });
       } else {
         if (this.state.emptyFavorites) {
           this.setState({
             emptyFavorites: false,
-          })
+          });
         }
       }
 
-
       this.setState({
         cocktail: this.state.cocktail2,
-        liked: this.state.keys.includes(this.state.cocktail2.id)
+        liked: this.state.keys.includes(this.state.cocktail2.id),
       });
       this.fetchRandomDrink();
       this.slideIn();
     });
-  }
+  };
 
   slideIn = () => {
-
     this.setState({ positionX: screenWidth }, () => {
       return Animated.parallel([
         Animated.timing(this.state.slide, {
           toValue: 0,
           duration: DURATION,
-          useNativeDriver: true
+          useNativeDriver: true,
         }),
       ]).start(() => {
-
         let drinksMade = this.state.drinksMade + 1;
         if (this.state.favoriteMode && this.state.emptyFavorites) {
           //just so u dont get ads after seeing the test card
@@ -177,35 +185,34 @@ export default class HomeScreen extends React.Component {
         this.setState({
           positionX: screenWidth * -1,
           buttonDisabled: false,
-          drinksMade: drinksMade
-        })
+          drinksMade: drinksMade,
+        });
 
-        if(this.state.buttonDisabled){
-          setTimeout(()=> {
-            this.setState({buttonDisabled: false})
-          }, 5000)
+        if (this.state.buttonDisabled) {
+          setTimeout(() => {
+            this.setState({ buttonDisabled: false });
+          }, 5000);
         }
-
       });
-    })
-
-  }
+    });
+  };
 
   favoriteMode = () => {
     if (this.state.favoriteButtonDisabled) {
       return;
     }
     let favoriteMode = !this.state.favoriteMode;
-    this.setState({
-      favoriteMode: favoriteMode
-    }, () => {
-      this.fetchRandomDrink();
-    });
-
-  }
+    this.setState(
+      {
+        favoriteMode: favoriteMode,
+      },
+      () => {
+        this.fetchRandomDrink();
+      }
+    );
+  };
 
   favorite = () => {
-
     let liked = !this.state.liked;
     if (liked) {
       FileSystem.saveToFileSystem(this.state.cocktail.id, () => {
@@ -221,7 +228,7 @@ export default class HomeScreen extends React.Component {
       });
     }
     this.setState({ liked: liked });
-  }
+  };
 
   state = {
     slide: new Animated.Value(0),
@@ -235,176 +242,202 @@ export default class HomeScreen extends React.Component {
     isNextLiked: false,
     favoriteButtonDisabled: true,
     drinksMade: 1,
-    colorIndex: 0
-  }
+    colorIndex: 0,
+  };
 
   setColorIndex = (index) => {
     this.setState({ colorIndex: index });
-  }
+    FileSystem.saveSettings(JSON.stringify({
+        colorIndex: index
+    }));
+  };
 
   render() {
-
     return (
-      <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} >
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors[this.state.colorIndex] },
+        ]}
+      >
+        <View
+          style={[
+            styles.container,
+            { backgroundColor: colors[this.state.colorIndex] },
+          ]}
+          contentContainerStyle={styles.contentContainer}
+        >
+          <ColorPalette
+            colors={colors}
+            colorIndex={this.state.colorIndex}
+            setColorIndex={this.setColorIndex}
+          />
 
-        <View style={[styles.container, { backgroundColor: colors[this.state.colorIndex] }]} contentContainerStyle={styles.contentContainer}>
-          
-          <ColorPalette colors={colors} colorIndex={this.state.colorIndex} setColorIndex={this.setColorIndex} />
-
-          <Animated.View style={{
-            transform: [
-              {
-                translateX: this.state.slide.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, this.state.positionX]
-                })
-              }
-            ]
-          }}>
-
-
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  translateX: this.state.slide.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, this.state.positionX],
+                  }),
+                },
+              ],
+            }}
+          >
             <View style={styles.welcomeContainer}>
+              <CardFlip
+                style={styles.cardContainer}
+                ref={(card) => (this.card = card)}
+              >
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => this.card.flip()}
+                >
+                  {this.state.loading ? (
+                    <View style={styles.activityIndicator}>
+                      <ActivityIndicator size="large" color="#e0e0e0 " />
+                    </View>
+                  ) : this.state.emptyFavorites ? (
+                    <View style={[styles.card]}>
+                      <Text style={styles.h1}>{"Favorites List\n"}</Text>
+                      <Text style={styles.p}>
+                        {
+                          "Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"
+                        }
+                      </Text>
+                    </View>
+                  ) : (
+                    <View>
+                      <Image
+                        source={{ uri: this.state.cocktail.image }}
+                        style={{ height: "100%", width: "100%" }}
+                      ></Image>
 
-              <CardFlip style={styles.cardContainer} ref={(card) => this.card = card} >
-                <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
-
-                  {
-                    this.state.loading ?
-                      <View style={styles.activityIndicator}>
-
-                        <ActivityIndicator size="large" color="#e0e0e0 " />
-                      </View>
-                      :
-                      this.state.emptyFavorites ?
-
-                        <View style={[styles.card]}>
-                          <Text style={styles.h1}>{"Favorites List\n"}</Text>
-                          <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
-                        </View>
-
-                        :
-
-                          <View>
-
-                            <Image source={{ uri: this.state.cocktail.image }} style={{ height: '100%', width: '100%' }}></Image>
-
-                            <Icon
-                              reverse
-                              raised
-                              name='heart'
-                              type='font-awesome'
-                              color={this.state.liked ? '#f50057' : '#fff'}
-                              iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                              containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                              onPress={() => this.favorite()} />
-
-                          </View>
-                  }
-
+                      <Icon
+                        reverse
+                        raised
+                        name="heart"
+                        type="font-awesome"
+                        color={this.state.liked ? "#f50057" : "#fff"}
+                        iconStyle={{
+                          color: this.state.liked ? "#fff" : "#f50057",
+                        }}
+                        containerStyle={{
+                          position: "absolute",
+                          bottom: 0,
+                          right: 0,
+                          margin: 10,
+                        }}
+                        onPress={() => this.favorite()}
+                      />
+                    </View>
+                  )}
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.card} onPress={() => this.card.flip()} >
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => this.card.flip()}
+                >
+                  {this.state.loading ? (
+                    <View style={styles.activityIndicator}>
+                      <ActivityIndicator size="large" color="#e0e0e0 " />
+                    </View>
+                  ) : this.state.emptyFavorites ? (
+                    <View style={styles.card}>
+                      <Text style={styles.h1}>{"Favorites List\n"}</Text>
+                      <Text style={styles.p}>
+                        {
+                          "Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"
+                        }
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.card}>
+                      <Text style={styles.h1}>{this.state.cocktail.name}</Text>
+                      <View
+                        style={{ borderBottomWidth: 0.5, margin: 5 }}
+                      ></View>
 
-                  {
-                    this.state.loading ?
-                      <View style={styles.activityIndicator}>
+                      <Text style={styles.p}>
+                        {this.state.cocktail.getIngredients()}
+                      </Text>
 
-                        <ActivityIndicator size="large" color="#e0e0e0 " />
-                      </View>
-                      :
-                      this.state.emptyFavorites ?
+                      <Text style={styles.p}>
+                        {this.state.cocktail.instructions + "\n"}
+                      </Text>
 
-                        <View style={styles.card}>
-                          <Text style={styles.h1}>{"Favorites List\n"}</Text>
-                          <Text style={styles.p}>{"Currently you have no favorited items!\n\nHit the heart in the bottom corner of a drink card to add it to your favorites list!"}</Text>
+                      <Text style={styles.p}>
+                        {this.state.cocktail.getGlassString() + "\n"}
+                      </Text>
+                      <Text style={styles.p}>
+                        {this.state.cocktail.getCategoryString()}
+                      </Text>
 
-
-
-
-
-
-                        </View>
-
-                        :
-
-                          <View style={styles.card}>
-
-
-                            <Text style={styles.h1}>{this.state.cocktail.name}</Text>
-                            <View style={{ borderBottomWidth: 0.5, margin: 5 }}>
-
-                            </View>
-
-
-
-                            <Text style={styles.p}>{this.state.cocktail.getIngredients()}</Text>
-
-                            <Text style={styles.p}>{this.state.cocktail.instructions + "\n"}</Text>
-
-                            <Text style={styles.p}>{this.state.cocktail.getGlassString() + "\n"}</Text>
-                            <Text style={styles.p}>{this.state.cocktail.getCategoryString()}</Text>
-
-                            <Icon
-                              reverse
-                              raised
-                              name='heart'
-                              type='font-awesome'
-                              color={this.state.liked ? '#f50057' : '#fff'}
-                              iconStyle={{ color: this.state.liked ? '#fff' : '#f50057' }}
-                              containerStyle={{ position: 'absolute', bottom: 0, right: 0, margin: 10 }}
-                              onPress={() => this.favorite()} />
-
-                          </View>
-                  }
-
-
+                      <Icon
+                        reverse
+                        raised
+                        name="heart"
+                        type="font-awesome"
+                        color={this.state.liked ? "#f50057" : "#fff"}
+                        iconStyle={{
+                          color: this.state.liked ? "#fff" : "#f50057",
+                        }}
+                        containerStyle={{
+                          position: "absolute",
+                          bottom: 0,
+                          right: 0,
+                          margin: 10,
+                        }}
+                        onPress={() => this.favorite()}
+                      />
+                    </View>
+                  )}
                 </TouchableOpacity>
               </CardFlip>
-
-
-
             </View>
           </Animated.View>
-
         </View>
-        {
-
-        this.state.buttonDisabled  ? 
-        <TouchableOpacity>
-        <View style={styles.newDrinkBtn}>
-          <ActivityIndicator></ActivityIndicator>
-
-        </View>
-
-      </TouchableOpacity>
-        
-        : 
-        <TouchableOpacity onPress={ this.state.adLoaded && this.state.showAd ? () => this.showAd() : () => {this.nextDrink()
-        }}>
-          <View style={styles.newDrinkBtn}>
-            <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
-
-          </View>
-
-        </TouchableOpacity>
-        }
+        {this.state.buttonDisabled ? (
+          <TouchableOpacity>
+            <View style={styles.newDrinkBtn}>
+              <ActivityIndicator></ActivityIndicator>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={
+              this.state.adLoaded && this.state.showAd
+                ? () => this.showAd()
+                : () => {
+                    this.nextDrink();
+                  }
+            }
+          >
+            <View style={styles.newDrinkBtn}>
+              <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity onPress={() => this.favoriteMode()}>
-          <View style={[styles.favoriteModeBtn, { backgroundColor: this.state.favoriteMode ? '#f50057' : '#fff' }]}>
+          <View
+            style={[
+              styles.favoriteModeBtn,
+              { backgroundColor: this.state.favoriteMode ? "#f50057" : "#fff" },
+            ]}
+          >
             <Icon
-              name='heart'
-              type='font-awesome'
-              iconStyle={{ color: this.state.favoriteMode ? '#fff' : '#f50057' }}
+              name="heart"
+              type="font-awesome"
+              iconStyle={{
+                color: this.state.favoriteMode ? "#fff" : "#f50057",
+              }}
               containerStyle={{}}
             />
             <Text style={styles.newDrinkBtnTxt}>{}</Text>
-
           </View>
-
         </TouchableOpacity>
-
-
-
-      </View >
+      </View>
     );
   }
 }
@@ -415,73 +448,76 @@ HomeScreen.navigationOptions = {
 
 const styles = StyleSheet.create({
   ad: {
-    justifyContent: 'center',
-    alignItems: 'center'
-
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   container: {
     flex: 1,
     paddingTop: 30,
     padding: 10,
-    flexDirection: 'column',
-    paddingBottom: 30
+    flexDirection: "column",
+    paddingBottom: 30,
   },
   favoriteModeBtn: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 30,
-    backgroundColor: '#fefefe',
+    backgroundColor: "#fefefe",
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '60%',
-    alignSelf: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    width: "60%",
+    alignSelf: "center",
     padding: 10,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 4.65,
 
     elevation: 8,
   },
-  activityIndicator: { height: '100%', width: '100%', justifyContent: 'center' },
+  activityIndicator: {
+    height: "100%",
+    width: "100%",
+    justifyContent: "center",
+  },
   newDrinkBtn: {
     marginBottom: 30,
-    backgroundColor: '#fefefe',
+    backgroundColor: "#fefefe",
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '60%',
-    alignSelf: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    width: "60%",
+    alignSelf: "center",
     padding: 10,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 4.65,
 
     elevation: 8,
   },
   newDrinkBtnTxt: {
-    fontFamily: 'merriweather-light',
+    fontFamily: "merriweather-light",
     fontSize: 18,
-    textAlign: 'center',
-    color: '#42a5f5',
+    textAlign: "center",
+    color: "#42a5f5",
   },
   h1: {
-    color: 'black',
+    color: "black",
     fontSize: 18,
-    fontFamily: 'merriweather-light'
+    fontFamily: "merriweather-light",
   },
   p: {
-    color: 'black',
+    color: "black",
     fontSize: 14,
-    fontFamily: 'merriweather-light'
+    fontFamily: "merriweather-light",
   },
 
   cardContainer: {
@@ -493,68 +529,68 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 4.65,
 
     elevation: 8,
   },
   card: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: "#fafafa",
     padding: 10,
   },
   developmentModeText: {
     marginBottom: 20,
-    color: 'rgba(0,0,0,0.4)',
+    color: "rgba(0,0,0,0.4)",
     fontSize: 14,
     lineHeight: 19,
-    textAlign: 'center',
+    textAlign: "center",
   },
   contentContainer: {
     paddingTop: 30,
   },
   welcomeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 10,
     marginBottom: 20,
   },
   welcomeImage: {
     width: 100,
     height: 80,
-    resizeMode: 'contain',
+    resizeMode: "contain",
     marginTop: 3,
     marginLeft: -10,
   },
   getStartedContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: 50,
   },
   homeScreenFilename: {
     marginVertical: 7,
   },
   codeHighlightText: {
-    color: 'rgba(96,100,109, 0.8)',
+    color: "rgba(96,100,109, 0.8)",
   },
   codeHighlightContainer: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: "rgba(0,0,0,0.05)",
     borderRadius: 3,
     paddingHorizontal: 4,
   },
   getStartedText: {
     fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
+    color: "rgba(96,100,109, 1)",
     lineHeight: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
   tabBarInfoContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     ...Platform.select({
       ios: {
-        shadowColor: 'black',
+        shadowColor: "black",
         shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
@@ -563,27 +599,27 @@ const styles = StyleSheet.create({
         elevation: 20,
       },
     }),
-    alignItems: 'center',
-    backgroundColor: '#fbfbfb',
+    alignItems: "center",
+    backgroundColor: "#fbfbfb",
     paddingVertical: 20,
   },
   tabBarInfoText: {
     fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    textAlign: 'center',
+    color: "rgba(96,100,109, 1)",
+    textAlign: "center",
   },
   navigationFilename: {
     marginTop: 5,
   },
   helpContainer: {
     marginTop: 15,
-    alignItems: 'center',
+    alignItems: "center",
   },
   helpLink: {
     paddingVertical: 15,
   },
   helpLinkText: {
     fontSize: 14,
-    color: '#2e78b7',
+    color: "#2e78b7",
   },
 });

@@ -28,18 +28,19 @@ const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 
 const screenWidth = Math.round(Dimensions.get("window").width);
 const DURATION = 500;
+const CARDS_UNTIL_AD_SHOWN = 7;
 
 export default class HomeScreen extends React.Component {
   componentDidMount = async () => {
-    FileSystem.loadFromFileSystem((keys) => {
-      this.setState({ keys: keys, favoriteButtonDisabled: false });
+    FileSystem.loadFromFileSystem(FileSystem.FILES.FAVORITES, (favorites) => {
+      console.log('favorites: ' + favorites);
+      this.setState({ favoritesList: favorites, favoriteButtonDisabled: false });
     });
-
-    FileSystem.loadSettings((data) => {
-      let colorIndex = JSON.parse(data).colorIndex;
+    FileSystem.loadFromFileSystem(FileSystem.FILES.SETTINGS,(settings) => {
+      console.log('settings: ' + settings);
+      let colorIndex = settings.colorIndex;
       this.setState({colorIndex: colorIndex})
     })
-
     this.fetchRandomDrink();
     this.loadAd();
   };
@@ -53,6 +54,7 @@ export default class HomeScreen extends React.Component {
       AdMobInterstitial.setAdUnitID(config.interstitalAd);
       AdMobInterstitial.addEventListener("interstitialDidLoad", () => {
         this.setState({ adLoaded: true });
+        console.log('ad loaded succesfully');
       });
       AdMobInterstitial.addEventListener("interstitialDidClose", async () => {
         this.setState({ adLoaded: false, showAd: false });
@@ -60,7 +62,7 @@ export default class HomeScreen extends React.Component {
       });
       await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
     } catch (e) {
-      console.log("Ad already loaded");
+      console.log(e.message);
     }
   };
 
@@ -73,32 +75,37 @@ export default class HomeScreen extends React.Component {
   };
 
   fetchRandomDrink = () => {
-    if (this.state.drinksMade == 7) {
+    if (this.state.drinksMade == CARDS_UNTIL_AD_SHOWN) {
       this.setState({
         showAd: true,
-        drinksMade: -1,
+        drinksMade: 1,
       });
+      console.log('Ad will be displayed');
     }
+    console.log(this.state.drinksMade + ' drinks made');
 
     this.setState({
       preloaded: false,
     });
-    let link = "https://www.thecocktaildb.com/api/json/v1/1/random.php";
+    let link = `https://www.thecocktaildb.com/api/json/v2/${config.apiKey}/random.php`;
 
     if (this.state.favoriteMode) {
-      let keys = this.state.keys;
-      let id = keys[this.state.favoritesIndex];
+      if(this.state.favoritesList.length == 0){
+        return;
+      }
+      let favoritesList = this.state.favoritesList;
+      let id = favoritesList[this.state.favoritesIndex];
       let newIndex = this.state.favoritesIndex + 1;
-      link = `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`;
+      link = `https://www.thecocktaildb.com/api/json/v2/${config.apiKey}/lookup.php?i=${id}`;
 
-      if (newIndex >= keys.length) {
+      if (newIndex >= favoritesList.length) {
         newIndex = 0;
       }
       this.setState({
         favoritesIndex: newIndex,
       });
 
-      if (keys.length < 1) {
+      if (favoritesList.length < 1) {
         return;
       }
     }
@@ -131,7 +138,7 @@ export default class HomeScreen extends React.Component {
         this.setState({
           loading: true,
         });
-        console.log(error);
+        console.log('attempting to reconnect');
         setTimeout(() => {
           this.fetchRandomDrink();
         }, 1000);
@@ -146,7 +153,7 @@ export default class HomeScreen extends React.Component {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      if (this.state.favoriteMode && this.state.keys < 1) {
+      if (this.state.favoriteMode && this.state.favoritesList < 1) {
         this.setState({
           emptyFavorites: true,
         });
@@ -160,7 +167,7 @@ export default class HomeScreen extends React.Component {
 
       this.setState({
         cocktail: this.state.cocktail2,
-        liked: this.state.keys.includes(this.state.cocktail2.id),
+        liked: this.state.favoritesList.includes(this.state.cocktail2.id),
       });
       this.fetchRandomDrink();
       this.slideIn();
@@ -214,19 +221,19 @@ export default class HomeScreen extends React.Component {
 
   favorite = () => {
     let liked = !this.state.liked;
+    let favoritesList = this.state.favoritesList;
     if (liked) {
-      FileSystem.saveToFileSystem(this.state.cocktail.id, () => {
-        FileSystem.loadFromFileSystem((keys) => {
-          this.setState({ keys: keys });
-        });
-      });
+      favoritesList.push(this.state.cocktail.id);
     } else {
-      FileSystem.deleteFromFileSystem(this.state.cocktail.id, () => {
-        FileSystem.loadFromFileSystem((keys) => {
-          this.setState({ keys: keys });
-        });
-      });
+      favoritesList.splice(favoritesList.indexOf(this.state.cocktail.id), 1);
     }
+    FileSystem.saveToFileSystem(FileSystem.FILES.FAVORITES, favoritesList, () => {
+      FileSystem.loadFromFileSystem(FileSystem.FILES.FAVORITES, (favorites) => {
+        console.log(favorites);
+        this.setState({ favoritesList: favorites, favoriteButtonDisabled: false });
+      });
+    });
+
     this.setState({ liked: liked });
   };
 
@@ -241,15 +248,14 @@ export default class HomeScreen extends React.Component {
     favoriteMode: false,
     isNextLiked: false,
     favoriteButtonDisabled: true,
-    drinksMade: 1,
+    drinksMade: 2,
     colorIndex: 0,
+    favoritesList: []
   };
 
   setColorIndex = (index) => {
     this.setState({ colorIndex: index });
-    FileSystem.saveSettings(JSON.stringify({
-        colorIndex: index
-    }));
+    FileSystem.saveToFileSystem(FileSystem.FILES.SETTINGS, {colorIndex: index}, ()=>{})
   };
 
   render() {

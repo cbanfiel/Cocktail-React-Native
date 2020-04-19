@@ -23,7 +23,7 @@ import { AdCard } from "../components/AdCard";
 import { AdMobInterstitial } from "expo-ads-admob";
 import * as config from "../config";
 import ColorPalette from "../components/ColorPalette";
-
+import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import {
   FlingGestureHandler,
   Directions,
@@ -33,24 +33,62 @@ import {
 const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 
 const screenWidth = Math.round(Dimensions.get("window").width);
+const screenHeight = Math.round(Dimensions.get("window").height);
+
 const DURATION = 500;
 const CARDS_UNTIL_AD_SHOWN = 7;
 
-
 const TUTORIAL_STATE = {
-    TAP_CARD: 1,
-    NEW_CARD:2,
-    FAVORITE_CARD:3,
-    UNFAVORITE_CARD:4,
-    FAVORITES_MODE:5
+    TAP_CARD: 0,
+    NEW_CARD: 1,
+    FAVORITE_CARD:2,
+    UNFAVORITE_CARD:3,
+    FAVORITES_MODE:4,
+    FAVORITES_MODE_PART_2: 5,
+    FINISHED: 6
     }
 
-export default class Tutorial extends React.Component {
-  componentDidMount = async () => {
+const TUTORIAL_TEXT = [
+  {
+  front: "This is the front of the card\n\nThe front of the card will usually display an image of the cocktail\n\nTap the card to flip it over",
+  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the make me a drink button or swipe left on the card!"
+  },
+   {
+  front: "This is the front of the card\n\nThe front of the card will usually display an image of the cocktail\n\nTap the card to flip it over",
+  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the make me a drink button or swipe left on the card!"
+  },
+  {
+  front: "This is the front of a brand new card\n\nThis will display the new cocktails image\n\nTo save this cocktail in your favorites list tap the heart in the bottom right corner of the card!\n\nTap the heart to add this card to your favorites list!",
+  back: "This is the back of a brand new card\n\nThis will display the new cocktails ingredients and instructions\n\nTo save this cocktail in your favorites list tap the heart in the bottom right corner of the card!\n\nTap the heart to add this card to your favorites list!"
+  },
+  {
+  front: "Congratulations!\n\nYou favorited this card!\n\nTo unfavorite the card just tap the pink heart button in the bottom right corner of the card!\n\nTap the heart again to remove it from your favorites list!",
+  back: "Congratulations!\n\nYou favorited this card!\n\nTo unfavorite the card just tap the pink heart button in the bottom right corner of the card!\n\nTap the heart again to remove it from your favorites list!",
+  },
+  {
+  front: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap make me a drink or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
+  back: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap make me a drink or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
+  },
+  {
+  front: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the make me a drink button or swipe left on the card!",
+  back: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the make me a drink button or swipe left on the card!",
+  },
+  {
+  front: "Since you are in favorites mode this card will display a favorited card!\n\nCongratulations! You completed the tutorial!\nPress the complete tutorial button to finish the tutorial!",
+  back: "Since you are in favorites mode this card will display a favorited card!\n\nCongratulations! You completed the tutorial!\nPress the complete tutorial button to finish the tutorial!",
+  },
 
-  };
+];
+
+export default class Tutorial extends React.Component {
+
+
 
   nextDrink = () => {
+    if(this.state.tutorialState == TUTORIAL_STATE.FINISHED){
+      this.props.endTutorial();
+      return;
+    }
     if (this.state.loading) {
       return;
     }
@@ -67,8 +105,12 @@ export default class Tutorial extends React.Component {
       }),
     ]).start(() => {
    if(this.state.tutorialState == TUTORIAL_STATE.NEW_CARD){
-     this.setState({tutorialState: TUTORIAL_STATE.FAVORITE_CARD})
+     this.setState({tutorialState: TUTORIAL_STATE.FAVORITE_CARD}, () => this.setIfDisabled())
    }
+   if(this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE_PART_2){
+     this.setState({tutorialState: TUTORIAL_STATE.FINISHED}, () => this.setIfDisabled())
+   }
+
       this.slideIn();
     });
   };
@@ -82,34 +124,41 @@ export default class Tutorial extends React.Component {
           useNativeDriver: true,
         }),
       ]).start(() => {
-          this.setState({loading: false})
+          
+          this.setState({loading: false, buttonDisabled: false, positionX: screenWidth * -1})
       });
     });
   };
 
   favoriteMode = () => {
-    if (this.state.favoriteButtonDisabled) {
-      return;
-    }
     let favoriteMode = !this.state.favoriteMode;
+    if (this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE) {
     this.setState(
       {
         favoriteMode: favoriteMode,
-      },
-      () => {
-        this.fetchRandomDrink();
-      }
+        tutorialState: TUTORIAL_STATE.FAVORITES_MODE_PART_2
+      }, () => this.setIfDisabled()
     );
+    }
+    if(this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE_PART_2){
+      this.setState(
+      {
+        favoriteMode: favoriteMode,
+        tutorialState: TUTORIAL_STATE.FAVORITES_MODE
+      }, () => this.setIfDisabled()
+    );
+    }
+
   };
 
   favorite = () => {
     if(this.state.tutorialState == TUTORIAL_STATE.FAVORITE_CARD){
     let liked = !this.state.liked;
-    this.setState({ liked: liked, tutorialState :TUTORIAL_STATE.UNFAVORITE_CARD });
+    this.setState({ liked: liked, tutorialState :TUTORIAL_STATE.UNFAVORITE_CARD }, ()=> this.setIfDisabled());
     }
     if(this.state.tutorialState == TUTORIAL_STATE.UNFAVORITE_CARD){
     let liked = !this.state.liked;
-    this.setState({ liked: liked, tutorialState :TUTORIAL_STATE.FAVORITES_MODE });
+    this.setState({ liked: liked, tutorialState :TUTORIAL_STATE.FAVORITES_MODE }, ()=> this.setIfDisabled());
     }
 
   };
@@ -119,6 +168,61 @@ export default class Tutorial extends React.Component {
         this.nextDrink();
     }
   };
+
+
+  setIfDisabled = () => {
+    if(this.state.tutorialState == TUTORIAL_STATE.TAP_CARD){
+      this.setState({
+        newDrinkButtonDisabled: true,
+        favoritesModeButtonDisabled: true,
+        addToFavoritesButtonDisabled: true
+      })
+
+    }else if(this.state.tutorialState == TUTORIAL_STATE.NEW_CARD){
+       this.setState({
+        newDrinkButtonDisabled: false,
+        favoritesModeButtonDisabled: true,
+        addToFavoritesButtonDisabled: true
+      })
+
+    }else if(this.state.tutorialState == TUTORIAL_STATE.FAVORITE_CARD){
+       this.setState({
+        newDrinkButtonDisabled: true,
+        favoritesModeButtonDisabled: true,
+        addToFavoritesButtonDisabled: false
+      })
+
+    }else if(this.state.tutorialState == TUTORIAL_STATE.UNFAVORITE_CARD){
+       this.setState({
+        newDrinkButtonDisabled: true,
+        favoritesModeButtonDisabled: true,
+        addToFavoritesButtonDisabled: false
+      })
+
+    }else if(this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE){
+       this.setState({
+        newDrinkButtonDisabled: true,
+        favoritesModeButtonDisabled: false,
+        addToFavoritesButtonDisabled: true
+      })
+
+    }else if(this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE_PART_2){
+       this.setState({
+        newDrinkButtonDisabled: false,
+        favoritesModeButtonDisabled: false,
+        addToFavoritesButtonDisabled: true
+      })
+
+    }
+    else if(this.state.tutorialState == TUTORIAL_STATE.FINISHED){
+       this.setState({
+        newDrinkButtonDisabled: false,
+        favoritesModeButtonDisabled: false,
+        addToFavoritesButtonDisabled: true
+      })
+
+    }
+  }
 
   state = {
     slide: new Animated.Value(0),
@@ -134,7 +238,10 @@ export default class Tutorial extends React.Component {
     drinksMade: 2,
     colorIndex: 0,
     favoritesList: [],
-    tutorialState: TUTORIAL_STATE.TAP_CARD
+    tutorialState: TUTORIAL_STATE.TAP_CARD,
+    newDrinkButtonDisabled: true,
+    favoritesModeButtonDisabled: true,
+    addToFavoritesButtonDisabled: true
   };
 
   setColorIndex = (index) => {
@@ -143,6 +250,8 @@ export default class Tutorial extends React.Component {
   };
 
   render() {
+const styles = this.props.styles;
+
     return (
       <View
         style={[
@@ -158,8 +267,7 @@ export default class Tutorial extends React.Component {
           contentContainerStyle={styles.contentContainer}
         >
                   <ColorPalette
-                            style={[styles.palette, {opacity: 0}]}
-
+                            style={styles.palette}
             colors={colors}
             colorIndex={this.state.colorIndex}
             setColorIndex={this.setColorIndex}
@@ -193,235 +301,71 @@ export default class Tutorial extends React.Component {
                   onPress={() => {
                     this.card.flip()
                     if(this.state.tutorialState == TUTORIAL_STATE.TAP_CARD){
-                      this.setState({tutorialState: TUTORIAL_STATE.NEW_CARD})
+                      this.setState({tutorialState: TUTORIAL_STATE.NEW_CARD}, ()=> this.setIfDisabled())
                     }
                     }
                     }
                 >
-                  {this.state.tutorialState <= TUTORIAL_STATE.NEW_CARD ? (
-                      <View style={[styles.card]}>
-                      <Text style={styles.h1}>{"Tutorial\n"}</Text>
-                      <Text style={styles.p}>
-                        {
-                          "This is the front of the card\n\nThe front of the card will usually display an image of the cocktail\n\nTap the card to flip it over"
-                        }
-                      </Text>
-                    </View>
-                  ) : this.state.tutorialState == TUTORIAL_STATE.FAVORITE_CARD ? (
                <View style={[styles.card]}>
                       <Text style={styles.h1}>{"Tutorial\n"}</Text>
                       <Text style={styles.p}>
-                        {
-                          "This is the front of a brand new card\n\nThis will display the new cocktails image\n\nTo save this cocktail in your favorites list tap the heart in the bottom right corner of the card!\n\nTap the heart!"
-                        }
+                      {TUTORIAL_TEXT[this.state.tutorialState].front}
                       </Text>
-                      
                       <Icon
                         reverse
                         raised
                         name="heart"
                         type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
+                        color={this.state.addToFavoritesButtonDisabled ? '#cccccc' : this.state.liked ? "#f50057" : "#fff"}
                         iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
+                          color: this.state.addToFavoritesButtonDisabled ? '#666666' :this.state.liked ? "#fff" : "#f50057",
                         }}
-                        containerStyle={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          margin: 10,
-                        }}
-                        onPress={() => this.favorite()}
-                      />
-                    </View>
-                  ) : this.state.tutorialState == TUTORIAL_STATE.UNFAVORITE_CARD ? (
-               <View style={[styles.card]}>
-                      <Text style={styles.h1}>{"Tutorial\n"}</Text>
-                      <Text style={styles.p}>
-                        {
-                          "Congratulations!\n\nYou favorited this card!\n\nTo unfavorite the card just tap the pink heart button in the bottom right corner of the card!\n\nTap the heart again to remove it from your favorites list!"
-                        }
-                      </Text>
-                      
-                      <Icon
-                        reverse
-                        raised
-                        name="heart"
-                        type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
-                        iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
-                        }}
-                        containerStyle={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          margin: 10,
-                        }}
-                        onPress={() => this.favorite()}
-                      />
-                    </View>
-                  ) :  this.state.tutorialState == TUTORIAL_STATE.FAVORITES_MODE ? (
-               <View style={[styles.card]}>
-                      <Text style={styles.h1}>{"Tutorial\n"}</Text>
-                      <Text style={styles.p}>
-                        {
-                          "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap make me a drink or swipe left on the card and it will only load drinks from your favorites list!\n\nTap the favorites mode button"
-                        }
-                      </Text>
-                      
-                      <Icon
-                        reverse
-                        raised
-                        name="heart"
-                        type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
-                        iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
-                        }}
-                        containerStyle={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          margin: 10,
-                        }}
-                        onPress={() => this.favorite()}
-                      />
-                    </View>
-                  ) : (
-                    <View>
-                      <Image
-                        source={{ uri: this.state.cocktail.image }}
-                        style={{ height: "100%", width: "100%" }}
-                      ></Image>
+                        size={verticalScale(19)}
 
-                      <Icon
-                        reverse
-                        raised
-                        name="heart"
-                        type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
-                        iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
-                        }}
                         containerStyle={{
                           position: "absolute",
                           bottom: 0,
                           right: 0,
                           margin: 10,
                         }}
-                        onPress={() => this.favorite()}
+                        onPress={() => this.state.addToFavoritesButtonDisabled ? null : this.favorite()}
                       />
                     </View>
-                  )}
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.card}
-                  onPress={() => this.card.flip()}
+                  onPress={() => {
+                    this.card.flip()
+                  
+                    }
+                    }
                 >
-                 {this.state.tutorialState <= TUTORIAL_STATE.NEW_CARD ? (
-                      <View style={[styles.card]}>
-                      <Text style={styles.h1}>{"Tutorial\n"}</Text>
-                      <Text style={styles.p}>
-                        {
-                          "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the make me a drink button or swipe left on the card!"
-                        }
-                      </Text>
-                    </View>
-                  ) : this.state.tutorialState == TUTORIAL_STATE.FAVORITE_CARD ? (
                <View style={[styles.card]}>
                       <Text style={styles.h1}>{"Tutorial\n"}</Text>
                       <Text style={styles.p}>
-                        {
-                          "This is the back of a brand new card\n\nThis will display the new cocktails ingredients and instructions\n\nTo save this cocktail in your favorites list tap the heart in the bottom right corner of the card!\n\nTap the heart!"
-                        }
+                       {TUTORIAL_TEXT[this.state.tutorialState].back}
                       </Text>
-                            <Icon
+                     <Icon
                         reverse
                         raised
                         name="heart"
                         type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
+                        color={this.state.addToFavoritesButtonDisabled ? '#cccccc' : this.state.liked ? "#f50057" : "#fff"}
                         iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
+                          color: this.state.addToFavoritesButtonDisabled ? '#666666' :this.state.liked ? "#fff" : "#f50057",
                         }}
+                        size={verticalScale(19)}
+
                         containerStyle={{
                           position: "absolute",
                           bottom: 0,
                           right: 0,
                           margin: 10,
                         }}
-                        onPress={() => this.favorite()}
+                        onPress={() => this.state.addToFavoritesButtonDisabled ? null : this.favorite()}
                       />
                     </View>
-                  ) : this.state.tutorialState == TUTORIAL_STATE.UNFAVORITE_CARD ? (
-               <View style={[styles.card]}>
-                      <Text style={styles.h1}>{"Tutorial\n"}</Text>
-                      <Text style={styles.p}>
-                        {
-                          "Congratulations!\n\nYou favorited this card!\n\nTo unfavorite the card just tap the pink heart button in the bottom right corner of the card!\n\nTap the heart again to remove it from your favorites list!"
-                        }
-                      </Text>
-                      
-                      <Icon
-                        reverse
-                        raised
-                        name="heart"
-                        type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
-                        iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
-                        }}
-                        containerStyle={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          margin: 10,
-                        }}
-                        onPress={() => this.favorite()}
-                      />
-                    </View>
-                  ): (
-                    <View style={styles.card}>
-                      <Text style={styles.h1}>{this.state.cocktail.name}</Text>
-                      <View
-                        style={{ borderBottomWidth: 0.5, margin: 5 }}
-                      ></View>
-
-                      <Text style={styles.p}>
-                        {this.state.cocktail.getIngredients()}
-                      </Text>
-
-                      <Text style={styles.p}>
-                        {this.state.cocktail.instructions + "\n"}
-                      </Text>
-
-                      <Text style={styles.p}>
-                        {this.state.cocktail.getGlassString() + "\n"}
-                      </Text>
-                      <Text style={styles.p}>
-                        {this.state.cocktail.getCategoryString()}
-                      </Text>
-
-                      <Icon
-                        reverse
-                        raised
-                        name="heart"
-                        type="font-awesome"
-                        color={this.state.liked ? "#f50057" : "#fff"}
-                        iconStyle={{
-                          color: this.state.liked ? "#fff" : "#f50057",
-                        }}
-                        containerStyle={{
-                          position: "absolute",
-                          bottom: 0,
-                          right: 0,
-                          margin: 10,
-                        }}
-                        onPress={() => this.favorite()}
-                      />
-                    </View>
-                  )}
+         
                 </TouchableOpacity>
               </CardFlip>
             </View>
@@ -431,40 +375,40 @@ export default class Tutorial extends React.Component {
         </View>
         {this.state.buttonDisabled ? (
           <TouchableOpacity>
-            <View style={[styles.newDrinkBtn, {opacity: this.state.tutorialState < TUTORIAL_STATE.NEW_CARD ? 0 : 100}]}>
+            <View style={[styles.newDrinkBtn]}>
               <ActivityIndicator></ActivityIndicator>
             </View>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
+          <TouchableOpacity disabled={this.state.newDrinkButtonDisabled}
             onPress={
               () => {
-                    if(this.state.tutorialState != TUTORIAL_STATE.NEW_CARD){
-                      return;
-                    }
                     this.nextDrink();
                   }
             }
           >
-            <View style={[styles.newDrinkBtn, {opacity: this.state.tutorialState < TUTORIAL_STATE.NEW_CARD ? 0 : 100}]}>
-              <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
+            <View style={[styles.newDrinkBtn, this.state.newDrinkButtonDisabled ? styles.disabled : null]}>
+              <Text style={[styles.newDrinkBtnTxt, this.state.newDrinkButtonDisabled ? styles.disabledText : null]}>{this.state.tutorialState == TUTORIAL_STATE.FINISHED? "complete tutorial": "make me a drink"}</Text>
             </View>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity onPress={() => this.favoriteMode()}>
+        <TouchableOpacity disabled={this.state.favoritesModeButtonDisabled} onPress={() => this.favoriteMode()}>
           <View
             style={[
               styles.favoriteModeBtn,
-              { backgroundColor: this.state.favoriteMode ? "#f50057" : "#fff" }, {opacity: this.state.tutorialState < TUTORIAL_STATE.FAVORITES_MODE ? 0 : 100}
+              { backgroundColor: this.state.favoriteMode ? "#f50057" : "#fff" }, this.state.favoritesModeButtonDisabled ? styles.disabled : null
             ]}
           >
             <Icon
               name="heart"
               type="font-awesome"
               iconStyle={{
-                color: this.state.favoriteMode ? "#fff" : "#f50057",
+                color: this.state.favoritesModeButtonDisabled ? "#666666" : this.state.favoriteMode ? "#fff" : "#f50057",
               }}
+              size={verticalScale(19)}
+                  
+
               containerStyle={{}}
             />
             <Text style={styles.newDrinkBtnTxt}>{}</Text>
@@ -479,110 +423,3 @@ export default class Tutorial extends React.Component {
 Tutorial.navigationOptions = {
   header: null,
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 30,
-    padding: 10,
-    flexDirection: "column",
-    paddingBottom: 30,
-  },      palette: {
-        backgroundColor: '#212121',
-        height: 45,
-        width: 235,
-        borderRadius: 25,
-        alignSelf: 'center',
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly'
-    },
-  favoriteModeBtn: {
-    flexDirection: "row",
-    marginBottom: 30,
-    backgroundColor: "#fefefe",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    width: 235,
-    alignSelf: "center",
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-
-    elevation: 8,
-  },
-  activityIndicator: {
-    height: "100%",
-    width: "100%",
-    justifyContent: "center",
-  },
-  newDrinkBtn: {
-    marginBottom: 30,
-    backgroundColor: "#fefefe",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    width: 235,
-    alignSelf: "center",
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-
-    elevation: 8,
-  },
-  newDrinkBtnTxt: {
-    fontFamily: "merriweather-light",
-    fontSize: 18,
-    textAlign: "center",
-    color: "#42a5f5",
-  },
-  h1: {
-    color: "black",
-    fontSize: 18,
-    fontFamily: "merriweather-light",
-  },
-  p: {
-    color: "black",
-    fontSize: 14,
-    fontFamily: "merriweather-light",
-  },
-  cardContainer: {
-    marginTop: 40,
-    height: 500,
-    width: 350,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-
-    elevation: 8,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: "#fafafa",
-    padding: 10,
-  },
-  contentContainer: {
-    paddingTop: 30,
-  },
-  centerCardContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: '8%',
-    marginBottom: 20,
-  }
-});

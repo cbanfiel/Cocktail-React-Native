@@ -24,7 +24,7 @@ export const loadFromFileSystem = (file, _callback) => {
     }).catch((err) => {
         let defaultData = '';
         if(file == FILES.SETTINGS){
-            defaultData = {colorIndex: 0}
+            defaultData = {colorIndex: 0, tutorialCompleted: false}
         }
         if(file == FILES.FAVORITES){
             defaultData = [];

@@ -24,6 +24,7 @@ import { AdMobInterstitial } from "expo-ads-admob";
 import * as config from "../config";
 import ColorPalette from "../components/ColorPalette";
 import Tutorial from "../components/Tutorial";
+import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 
 import {
   FlingGestureHandler,
@@ -36,14 +37,30 @@ const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 const screenWidth = Math.round(Dimensions.get("window").width);
 const screenHeight = Math.round(Dimensions.get("window").height);
 
-const cardWidth = screenWidth*0.84;
-const cardHeight = screenHeight*0.55;
+let fontSizeP = verticalScale(11);
+let fontSizeH1 = verticalScale(15);
+
+if(fontSizeP < 12){
+  fontSizeP = 12;
+}
+if(fontSizeP > 15){
+  fontSizeP = 15;
+}
+
+if(fontSizeH1 < 15){
+  fontSizeH1 = 15;
+}
+if(fontSizeH1 > 19){
+  fontSizeH1 = 19;
+}
+
 
 const DURATION = 500;
 const CARDS_UNTIL_AD_SHOWN = 7;
 
 export default class HomeScreen extends React.Component {
   componentDidMount = async () => {
+
     FileSystem.loadFromFileSystem(FileSystem.FILES.FAVORITES, (favorites) => {
       console.log('favorites: ' + favorites);
       this.setState({ favoritesList: favorites, favoriteButtonDisabled: false });
@@ -51,7 +68,8 @@ export default class HomeScreen extends React.Component {
     FileSystem.loadFromFileSystem(FileSystem.FILES.SETTINGS,(settings) => {
       console.log('settings: ' + settings);
       let colorIndex = settings.colorIndex;
-      this.setState({colorIndex: colorIndex})
+      let tutorialCompleted = settings.tutorialCompleted;
+      this.setState({colorIndex: colorIndex, tutorialMode: true})
     })
     this.fetchRandomDrink();
     this.loadAd();
@@ -273,18 +291,23 @@ export default class HomeScreen extends React.Component {
     drinksMade: 2,
     colorIndex: 0,
     favoritesList: [],
-    tutorialMode: true
+    tutorialMode: false
   };
+
+  endTutorial = () => {
+    this.setState({tutorialMode: false})
+    FileSystem.saveToFileSystem(FileSystem.FILES.SETTINGS, {colorIndex: 0, tutorialCompleted: true}, ()=>{})
+  }
 
   setColorIndex = (index) => {
     this.setState({ colorIndex: index });
-    FileSystem.saveToFileSystem(FileSystem.FILES.SETTINGS, {colorIndex: index}, ()=>{})
+    FileSystem.saveToFileSystem(FileSystem.FILES.SETTINGS, {colorIndex: index, tutorialCompleted: true}, ()=>{})
   };
 
   render() {
 
     if(this.state.tutorialMode){
-      return (<Tutorial/>)
+      return (<Tutorial endTutorial={this.endTutorial} styles={styles}/>)
     }
 
     return (
@@ -327,7 +350,7 @@ export default class HomeScreen extends React.Component {
             <View style={styles.centerCardContainer}>
 
               <CardFlip
-                style={[{width: cardWidth, height:cardHeight}, styles.cardContainer]}
+                style={[styles.cardContainer]}
                 ref={(card) => (this.card = card)}
               >
                 <TouchableOpacity
@@ -363,6 +386,8 @@ export default class HomeScreen extends React.Component {
                         iconStyle={{
                           color: this.state.liked ? "#fff" : "#f50057",
                         }}
+              size={verticalScale(19)}
+                        
                         containerStyle={{
                           position: "absolute",
                           bottom: 0,
@@ -422,6 +447,8 @@ export default class HomeScreen extends React.Component {
                         iconStyle={{
                           color: this.state.liked ? "#fff" : "#f50057",
                         }}
+              size={verticalScale(19)}
+
                         containerStyle={{
                           position: "absolute",
                           bottom: 0,
@@ -474,6 +501,8 @@ export default class HomeScreen extends React.Component {
               iconStyle={{
                 color: this.state.favoriteMode ? "#fff" : "#f50057",
               }}
+              size={verticalScale(19)}
+
               containerStyle={{}}
             />
             <Text style={styles.newDrinkBtnTxt}>{}</Text>
@@ -490,17 +519,22 @@ HomeScreen.navigationOptions = {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  disabled:{
+    backgroundColor:'#cccccc'
+  },
+  disabledText:{
+    color:'#666666'
+  },  container: {
     flex: 1,
-    paddingTop: 30,
+    paddingTop: verticalScale(25),
     padding: 10,
     flexDirection: "column",
-    paddingBottom: 30
+    paddingBottom: verticalScale(30)
   },
       palette: {
         backgroundColor: '#212121',
-        height: 45,
-        width: 235,
+        height: verticalScale(35),
+        width: verticalScale(35) * 5,
         borderRadius: 25,
         alignSelf: 'center',
         display: 'flex',
@@ -509,12 +543,12 @@ const styles = StyleSheet.create({
     },
   favoriteModeBtn: {
     flexDirection: "row",
-    marginBottom: 30,
     backgroundColor: "#fefefe",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    width: 235,
+    height: verticalScale(35),
+    width: verticalScale(35) * 5,
     alignSelf: "center",
     padding: 10,
     shadowColor: "#000",
@@ -533,14 +567,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   newDrinkBtn: {
-    marginBottom: 30,
+    marginBottom: verticalScale(20),
     backgroundColor: "#fefefe",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    width: 235,
+    height: verticalScale(35),
+    width: verticalScale(35) * 5,
     alignSelf: "center",
-    padding: 10,
+    padding: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -553,24 +588,26 @@ const styles = StyleSheet.create({
   },
   newDrinkBtnTxt: {
     fontFamily: "merriweather-light",
-    fontSize: 18,
+    fontSize: fontSizeH1,
     textAlign: "center",
     color: "#42a5f5",
   },
   h1: {
     color: "black",
-    fontSize: 18,
+    fontSize: fontSizeH1,
     fontFamily: "merriweather-light",
   },
   p: {
     color: "black",
-    fontSize: 14,
+    fontSize: fontSizeP,
     fontFamily: "merriweather-light",
   },
   cardContainer: {
-    marginTop: 40,
+    marginTop: verticalScale(35),
     maxHeight: 500,
     maxWidth: 350,
+    height: verticalScale(405),
+    width: verticalScale(405) * 0.7,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -592,7 +629,7 @@ const styles = StyleSheet.create({
   centerCardContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: '8%',
-    marginBottom: 20,
+    marginTop: 0,
+    marginBottom: 0,
   }
 });

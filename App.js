@@ -61,6 +61,7 @@ export default function App(props) {
             } />
           </Stack.Navigator>
         </NavigationContainer> */}
+
         <HomeScreen></HomeScreen>
       </View>
     );

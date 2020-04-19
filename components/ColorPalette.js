@@ -5,9 +5,9 @@ import { TouchableOpacity } from 'react-native-gesture-handler';
 
 export default class ColorPalette extends React.Component {
     render() {
-        const { colors, colorIndex, setColorIndex } = this.props;
+        const { colors, colorIndex, setColorIndex, style } = this.props;
         return (
-            <View style={styles.palette}>
+            <View style={style}>
 
                 {
                     colors.map((color, i) => {
@@ -32,14 +32,5 @@ export default class ColorPalette extends React.Component {
 
 
 const styles = StyleSheet.create({
-    palette: {
-        backgroundColor: '#212121',
-        height: 45,
-        width: 235,
-        borderRadius: 25,
-        alignSelf: 'center',
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly'
-    }
+
 })

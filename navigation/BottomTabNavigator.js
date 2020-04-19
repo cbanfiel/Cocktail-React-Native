@@ -3,7 +3,6 @@ import * as React from 'react';
 
 import TabBarIcon from '../components/TabBarIcon';
 import HomeScreen from '../screens/HomeScreen';
-import FavoritesScreen from '../screens/FavoritesScreen';
 
 const BottomTab = createBottomTabNavigator();
 const INITIAL_ROUTE_NAME = 'Home';
@@ -24,14 +23,6 @@ export default function BottomTabNavigator({ navigation, route }) {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} name="md-home" />,
-        }}
-      />
-      <BottomTab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} name="md-heart" />,
         }}
       />
     </BottomTab.Navigator>

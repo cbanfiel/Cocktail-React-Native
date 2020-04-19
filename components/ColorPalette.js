@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     palette: {
         backgroundColor: '#212121',
         height: 45,
-        width: '60%',
+        width: 235,
         borderRadius: 25,
         alignSelf: 'center',
         display: 'flex',

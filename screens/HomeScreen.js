@@ -24,6 +24,12 @@ import { AdMobInterstitial } from "expo-ads-admob";
 import * as config from "../config";
 import ColorPalette from "../components/ColorPalette";
 
+import {
+  FlingGestureHandler,
+  Directions,
+  State,
+} from 'react-native-gesture-handler';
+
 const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 
 const screenWidth = Math.round(Dimensions.get("window").width);
@@ -237,6 +243,16 @@ export default class HomeScreen extends React.Component {
     this.setState({ liked: liked });
   };
 
+    _onHorizontalFlingHandlerStateChange = ({ nativeEvent }, offset) => {
+    if (nativeEvent.oldState === State.ACTIVE) {
+      if(this.state.adLoaded && this.state.showAd){
+        this.showAd();
+      }else{
+        this.nextDrink();
+      }
+    }
+  };
+
   state = {
     slide: new Animated.Value(0),
     loading: true,
@@ -278,6 +294,10 @@ export default class HomeScreen extends React.Component {
             colorIndex={this.state.colorIndex}
             setColorIndex={this.setColorIndex}
           />
+          <FlingGestureHandler   direction={Directions.LEFT}
+          onHandlerStateChange={ev =>
+            this._onHorizontalFlingHandlerStateChange(ev, -10)
+          }> 
 
           <Animated.View
             style={{
@@ -292,6 +312,7 @@ export default class HomeScreen extends React.Component {
             }}
           >
             <View style={styles.welcomeContainer}>
+
               <CardFlip
                 style={styles.cardContainer}
                 ref={(card) => (this.card = card)}
@@ -402,6 +423,8 @@ export default class HomeScreen extends React.Component {
               </CardFlip>
             </View>
           </Animated.View>
+          </FlingGestureHandler> 
+
         </View>
         {this.state.buttonDisabled ? (
           <TouchableOpacity>
@@ -444,6 +467,7 @@ export default class HomeScreen extends React.Component {
           </View>
         </TouchableOpacity>
       </View>
+
     );
   }
 }
@@ -472,7 +496,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    width: "60%",
+    width: 235,
     alignSelf: "center",
     padding: 10,
     shadowColor: "#000",
@@ -496,7 +520,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    width: "60%",
+    width: 235,
     alignSelf: "center",
     padding: 10,
     shadowColor: "#000",
@@ -558,7 +582,7 @@ const styles = StyleSheet.create({
   welcomeContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: '8%',
     marginBottom: 20,
   },
   welcomeImage: {

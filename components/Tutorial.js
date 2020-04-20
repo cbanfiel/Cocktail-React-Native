@@ -51,11 +51,11 @@ const TUTORIAL_STATE = {
 const TUTORIAL_TEXT = [
   {
   front: "This is the front of the card\n\nThe front of the card will usually display an image of the cocktail\n\nTap the card to flip it over",
-  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the make me a drink button or swipe left on the card!"
+  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the drink button or swipe left on the card!"
   },
    {
   front: "This is the front of the card\n\nThe front of the card will usually display an image of the cocktail\n\nTap the card to flip it over",
-  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the make me a drink button or swipe left on the card!"
+  back: "This is the back of the card\n\nThe back of the card will usually display ingredients and instructions on how to make the cocktail\n\nTo fetch a new cocktail tap the drink button or swipe left on the card!"
   },
   {
   front: "This is the front of a brand new card\n\nThis will display the new cocktails image\n\nTo save this cocktail in your favorites list tap the heart in the bottom right corner of the card!\n\nTap the heart to add this card to your favorites list!",
@@ -66,12 +66,12 @@ const TUTORIAL_TEXT = [
   back: "Congratulations!\n\nYou favorited this card!\n\nTo unfavorite the card just tap the pink heart button in the bottom right corner of the card!\n\nTap the heart again to remove it from your favorites list!",
   },
   {
-  front: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap make me a drink or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
-  back: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap make me a drink or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
+  front: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap the drink button or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
+  back: "Okay this is the last step in your tutorial!\n\nTo view your favorited cocktails hit the heart button at the very bottom of the screen!\n\nThis button will put you into favorites mode!\n\nWhen you are in favorites mode just tap the drink button or swipe left and it will only load drinks from your favorites list!\n\nTap the favorites mode button to go into favorites mode!",
   },
   {
-  front: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the make me a drink button or swipe left on the card!",
-  back: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the make me a drink button or swipe left on the card!",
+  front: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the drink button or swipe left on the card!",
+  back: "Awesome! You are now in favorites mode!\n\nRemember, favorites mode will only show your favorited cocktails, if you want to leave favorites mode just tap the favorites mode button again and it will take you out of favorites mode!\n\nNow that you are in favorites mode tap the next drink button or swipe left to get a card from your favorites list!\n\nTap the drink button or swipe left on the card!",
   },
   {
   front: "Since you are in favorites mode this card will display a favorited card!\n\nCongratulations! You completed the tutorial!\nPress the complete tutorial button to finish the tutorial!",
@@ -91,6 +91,9 @@ export default class Tutorial extends React.Component {
     }
     if (this.state.loading) {
       return;
+    }
+    if(this.state.cardSide == 1){
+      this.card.flip();
     }
     this.setState({ buttonDisabled: true });
     this.slideLeft();
@@ -165,7 +168,9 @@ export default class Tutorial extends React.Component {
 
     _onHorizontalFlingHandlerStateChange = ({ nativeEvent }, offset) => {
     if (nativeEvent.oldState === State.ACTIVE) {
+      if(!this.state.newDrinkButtonDisabled){
         this.nextDrink();
+      }
     }
   };
 
@@ -241,7 +246,8 @@ export default class Tutorial extends React.Component {
     tutorialState: TUTORIAL_STATE.TAP_CARD,
     newDrinkButtonDisabled: true,
     favoritesModeButtonDisabled: true,
-    addToFavoritesButtonDisabled: true
+    addToFavoritesButtonDisabled: true,
+    cardSide: 0
   };
 
   setColorIndex = (index) => {
@@ -295,6 +301,7 @@ const styles = this.props.styles;
               <CardFlip
                 style={styles.cardContainer}
                 ref={(card) => (this.card = card)}
+                onFlipStart={(side)=>{this.setState({cardSide: side})}}
               >
                 <TouchableOpacity
                   style={styles.card}
@@ -388,7 +395,21 @@ const styles = this.props.styles;
             }
           >
             <View style={[styles.newDrinkBtn, this.state.newDrinkButtonDisabled ? styles.disabled : null]}>
-              <Text style={[styles.newDrinkBtnTxt, this.state.newDrinkButtonDisabled ? styles.disabledText : null]}>{this.state.tutorialState == TUTORIAL_STATE.FINISHED? "complete tutorial": "make me a drink"}</Text>
+
+            {
+              this.state.tutorialState == TUTORIAL_STATE.FINISHED ?
+               <Text style={styles.newDrinkBtnTxt}>complete tutorial</Text>
+                :
+            <Icon
+              name="local-bar"
+              type="material"
+              iconStyle={{
+                color: this.state.newDrinkButtonDisabled ? "#666666" : '#333',
+              }}
+              size={verticalScale(20)}
+              containerStyle={{}}
+            />
+  }
             </View>
           </TouchableOpacity>
         )}

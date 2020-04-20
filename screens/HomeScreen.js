@@ -26,6 +26,7 @@ import ColorPalette from "../components/ColorPalette";
 import Tutorial from "../components/Tutorial";
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 
+
 import {
   FlingGestureHandler,
   Directions,
@@ -69,7 +70,7 @@ export default class HomeScreen extends React.Component {
       console.log('settings: ' + settings);
       let colorIndex = settings.colorIndex;
       let tutorialCompleted = settings.tutorialCompleted;
-      this.setState({colorIndex: colorIndex, tutorialMode: true})
+      this.setState({colorIndex: colorIndex, tutorialMode: !tutorialCompleted})
     })
     this.fetchRandomDrink();
     this.loadAd();
@@ -100,6 +101,11 @@ export default class HomeScreen extends React.Component {
     if (this.state.loading) {
       return;
     }
+   
+    if(this.state.cardSide == 1){
+      this.card.flip();
+    }
+    console.log(this.card.onFlipEnd);
     this.setState({ buttonDisabled: true });
     this.slideLeft();
   };
@@ -194,6 +200,7 @@ export default class HomeScreen extends React.Component {
           });
         }
       }
+
 
       this.setState({
         cocktail: this.state.cocktail2,
@@ -291,7 +298,8 @@ export default class HomeScreen extends React.Component {
     drinksMade: 2,
     colorIndex: 0,
     favoritesList: [],
-    tutorialMode: false
+    tutorialMode: false,
+    cardSide: 0
   };
 
   endTutorial = () => {
@@ -352,10 +360,13 @@ export default class HomeScreen extends React.Component {
               <CardFlip
                 style={[styles.cardContainer]}
                 ref={(card) => (this.card = card)}
+                onFlipStart={(side)=>{this.setState({cardSide: side})}}
               >
                 <TouchableOpacity
                   style={styles.card}
-                  onPress={() => this.card.flip()}
+                  onPress={() => {
+                    this.card.flip()
+                  }}
                 >
                   {this.state.loading ? (
                     <View style={styles.activityIndicator}>
@@ -401,7 +412,9 @@ export default class HomeScreen extends React.Component {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.card}
-                  onPress={() => this.card.flip()}
+                  onPress={() => {
+                    this.card.flip()
+                  }}
                 >
                   {this.state.loading ? (
                     <View style={styles.activityIndicator}>
@@ -417,6 +430,7 @@ export default class HomeScreen extends React.Component {
                       </Text>
                     </View>
                   ) : (
+
                     <View style={styles.card}>
                       <Text style={styles.h1}>{this.state.cocktail.name}</Text>
                       <View
@@ -483,7 +497,15 @@ export default class HomeScreen extends React.Component {
             }
           >
             <View style={styles.newDrinkBtn}>
-              <Text style={styles.newDrinkBtnTxt}>{"make me a drink"}</Text>
+            <Icon
+              name="local-bar"
+              type="material"
+              iconStyle={{
+                color: this.state.newDrinkButtonDisabled ? "#666666" : '#333',
+              }}
+              size={verticalScale(22)}
+              containerStyle={{}}
+            />
             </View>
           </TouchableOpacity>
         )}
@@ -550,7 +572,7 @@ const styles = StyleSheet.create({
     height: verticalScale(35),
     width: verticalScale(35) * 5,
     alignSelf: "center",
-    padding: 10,
+    padding: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -588,9 +610,10 @@ const styles = StyleSheet.create({
   },
   newDrinkBtnTxt: {
     fontFamily: "merriweather-light",
-    fontSize: fontSizeH1,
+    fontSize: fontSizeP,
     textAlign: "center",
-    color: "#42a5f5",
+    color: "#333",
+    textTransform:'capitalize'
   },
   h1: {
     color: "black",
@@ -622,6 +645,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fafafa",
     padding: 10,
+    overflow: "hidden"
   },
   contentContainer: {
     paddingTop: 30,

@@ -1,32 +1,31 @@
 {
-    "expo": {
-        "name": "Make Me A Drink",
-        "slug": "Make-Me-A-Drink",
-        "platforms": [
-            "ios",
-            "android",
-            "web"
-        ],
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/images/icon.png",
-        "scheme": "myapp",
-        "splash": {
-            "image": "./assets/images/splash.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
-        },
-        "updates": {
-            "fallbackToCacheTimeout": 0
-        },
-        "assetBundlePatterns": [
-            "**/*"
-        ],
-        "ios": {
-            "supportsTablet": true,
-            "config": {
-                "googleMobileAdsAppId": "ca-app-pub-3785464955391322~8664308838"
-            }
-        }
+  "expo": {
+    "name": "Make Me A Drink",
+    "slug": "Make-Me-A-Drink",
+    "platforms": ["ios", "android", "web"],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#eeeeee"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3785464955391322~8664308838"
+      }
+    },
+    "android": {
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3785464955391322~9896443532"
+      }
     }
+  }
 }

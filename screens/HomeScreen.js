@@ -1,4 +1,3 @@
-import * as WebBrowser from "expo-web-browser";
 import * as React from "react";
 import {
   Image,
@@ -10,16 +9,11 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Alert,
 } from "react-native";
-import { ScrollView } from "react-native-gesture-handler";
 import CardFlip from "react-native-card-flip";
 import { Icon } from "react-native-elements";
-import Layout from "../constants/Layout";
 import { Cocktail } from "../classes/Cocktail";
 import * as FileSystem from "../classes/FileSystem";
-import NativeAdView from "react-native-admob-native-ads";
-import { AdCard } from "../components/AdCard";
 import { AdMobInterstitial } from "expo-ads-admob";
 import * as config from "../config";
 import ColorPalette from "../components/ColorPalette";
@@ -82,7 +76,7 @@ export default class HomeScreen extends React.Component {
 
   loadAd = async () => {
     try {
-      AdMobInterstitial.setAdUnitID(config.interstitalAd);
+      AdMobInterstitial.setAdUnitID(Platform.OS === 'ios' ? config.interstitalAd : config.androidInterstitalAd);
       AdMobInterstitial.addEventListener("interstitialDidLoad", () => {
         this.setState({ adLoaded: true });
         console.log('ad loaded succesfully');

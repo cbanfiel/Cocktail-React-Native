@@ -34,6 +34,7 @@ const screenHeight = Math.round(Dimensions.get("window").height);
 
 let fontSizeP = verticalScale(11);
 let fontSizeH1 = verticalScale(15);
+let iconSize = verticalScale(19);
 
 if(fontSizeP < 12){
   fontSizeP = 12;
@@ -49,9 +50,13 @@ if(fontSizeH1 > 19){
   fontSizeH1 = 19;
 }
 
+if(iconSize > 26){
+  iconSize = 26;
+}
+
 
 const DURATION = 500;
-const CARDS_UNTIL_AD_SHOWN = 7;
+const CARDS_UNTIL_AD_SHOWN = 8;
 
 export default class HomeScreen extends React.Component {
   componentDidMount = async () => {
@@ -91,16 +96,47 @@ export default class HomeScreen extends React.Component {
     }
   };
 
+  storeInPreviousDrinks = () => {
+    let prevDrinks = this.state.prevDrinks;
+    if(prevDrinks.length > 5){
+      prevDrinks.pop();
+    }
+    if(!prevDrinks.includes(this.state.cocktail)){
+      prevDrinks.unshift(this.state.cocktail);
+      this.setState({prevDrinks: prevDrinks})
+    }
+  }
+
+  prevDrink = () => {
+    let index = this.state.prevIndex + 1;
+    console.log(index);
+    console.log(this.state.prevDrinks.length);
+    if(index>= this.state.prevDrinks.length){
+      return;
+    }
+
+    if(this.state.cardSide == 1){
+      this.card.flip();
+    }
+    this.setState({ buttonDisabled: true, prevIndex: index, positionX: this.state.positionX * -1, goinBack: true}, () => {
+      this.slideLeft();
+    });
+  }
+
   nextDrink = () => {
     if (this.state.loading) {
       return;
     }
-   
+    if(this.state.prevIndex > -1){
+      this.setState({prevIndex: this.state.prevIndex - 1})
+    }else{
+      this.storeInPreviousDrinks();
+    }
+
     if(this.state.cardSide == 1){
       this.card.flip();
     }
-    console.log(this.card.onFlipEnd);
-    this.setState({ buttonDisabled: true });
+    this.setState({ buttonDisabled: true, goinBack: false });
     this.slideLeft();
   };
 
@@ -112,12 +148,25 @@ export default class HomeScreen extends React.Component {
       });
       console.log('Ad will be displayed');
     }
-    console.log(this.state.drinksMade + ' drinks made');
 
     this.setState({
       preloaded: false,
     });
     let link = `https://www.thecocktaildb.com/api/json/v2/${config.apiKey}/random.php`;
+
+    //load previous drink
+    if(this.state.prevIndex != -1){
+      console.log(this.state.prevIndex);
+      if(this.state.prevIndex == 0){
+        this.storeInPreviousDrinks();
+      }
+      this.setState({
+        loading: false,
+        preloaded: true,
+        cocktail: this.state.prevDrinks[this.state.prevIndex],
+      });
+      return;
+    }
 
     if (this.state.favoriteMode) {
       if(this.state.favoritesList.length == 0){
@@ -206,7 +255,12 @@ export default class HomeScreen extends React.Component {
   };
 
   slideIn = () => {
-    this.setState({ positionX: screenWidth }, () => {
+    let posX = screenWidth;
+    if(this.state.goinBack){
+      posX *= -1;
+    }
+
+    this.setState({ positionX: posX }, () => {
       return Animated.parallel([
         Animated.timing(this.state.slide, {
           toValue: 0,
@@ -268,7 +322,7 @@ export default class HomeScreen extends React.Component {
     this.setState({ liked: liked });
   };
 
-    _onHorizontalFlingHandlerStateChange = ({ nativeEvent }, offset) => {
+    onFlingLeft = ({ nativeEvent }, offset) => {
     if (nativeEvent.oldState === State.ACTIVE) {
       if(this.state.adLoaded && this.state.showAd){
         this.showAd();
@@ -276,6 +330,16 @@ export default class HomeScreen extends React.Component {
         this.nextDrink();
       }
     }
+  };
+
+  onFlingRight = ({ nativeEvent }, offset) => {
+    if (nativeEvent.oldState === State.ACTIVE) {
+      if(this.state.adLoaded && this.state.showAd){
+        this.showAd();
+      }else{
+        this.prevDrink();
+      }
+      }
   };
 
   state = {
@@ -293,7 +357,9 @@ export default class HomeScreen extends React.Component {
     colorIndex: 0,
     favoritesList: [],
     tutorialMode: false,
-    cardSide: 0
+    cardSide: 0,
+    prevDrinks: [],
+    prevIndex : -1
   };
 
   endTutorial = () => {
@@ -334,7 +400,11 @@ export default class HomeScreen extends React.Component {
           />
           <FlingGestureHandler   direction={Directions.LEFT}
           onHandlerStateChange={ev =>
-            this._onHorizontalFlingHandlerStateChange(ev, -10)
+            this.onFlingLeft(ev, -10)
+          }> 
+          <FlingGestureHandler   direction={Directions.RIGHT}
+          onHandlerStateChange={ev =>
+            this.onFlingRight(ev, -10)
           }> 
 
           <Animated.View
@@ -391,7 +461,7 @@ export default class HomeScreen extends React.Component {
                         iconStyle={{
                           color: this.state.liked ? "#fff" : "#f50057",
                         }}
-              size={verticalScale(19)}
+              size={iconSize}
                         
                         containerStyle={{
                           position: "absolute",
@@ -455,7 +525,7 @@ export default class HomeScreen extends React.Component {
                         iconStyle={{
                           color: this.state.liked ? "#fff" : "#f50057",
                         }}
-              size={verticalScale(19)}
+              size={iconSize}
 
                         containerStyle={{
                           position: "absolute",
@@ -471,6 +541,7 @@ export default class HomeScreen extends React.Component {
               </CardFlip>
             </View>
           </Animated.View>
+          </FlingGestureHandler> 
           </FlingGestureHandler> 
 
         </View>

@@ -109,8 +109,12 @@ export default class HomeScreen extends React.Component {
 
   prevDrink = () => {
     let index = this.state.prevIndex + 1;
-    console.log(index);
-    console.log(this.state.prevDrinks.length);
+
+    if(index == 0){
+      this.storeInPreviousDrinks();
+      index++;
+    }
+
     if(index>= this.state.prevDrinks.length){
       return;
     }
@@ -118,6 +122,8 @@ export default class HomeScreen extends React.Component {
     if(this.state.cardSide == 1){
       this.card.flip();
     }
+
+
     this.setState({ buttonDisabled: true, prevIndex: index, positionX: this.state.positionX * -1, goinBack: true}, () => {
       this.slideLeft();
     });
@@ -129,9 +135,10 @@ export default class HomeScreen extends React.Component {
     }
     if(this.state.prevIndex > -1){
       this.setState({prevIndex: this.state.prevIndex - 1})
-    }else{
-      this.storeInPreviousDrinks();
     }
+
+    this.storeInPreviousDrinks()
+
 
     if(this.state.cardSide == 1){
       this.card.flip();
@@ -156,14 +163,15 @@ export default class HomeScreen extends React.Component {
 
     //load previous drink
     if(this.state.prevIndex != -1){
-      console.log(this.state.prevIndex);
-      if(this.state.prevIndex == 0){
-        this.storeInPreviousDrinks();
-      }
+      let index = this.state.prevIndex;
+      let prev = this.state.prevDrinks;
+ 
       this.setState({
         loading: false,
         preloaded: true,
-        cocktail: this.state.prevDrinks[this.state.prevIndex],
+        prevIndex: index,
+        prevDrinks: prev,
+        cocktail: prev[index],
       });
       return;
     }
@@ -324,6 +332,9 @@ export default class HomeScreen extends React.Component {
 
     onFlingLeft = ({ nativeEvent }, offset) => {
     if (nativeEvent.oldState === State.ACTIVE) {
+      if(this.state.buttonDisabled){
+        return;
+      }
       if(this.state.adLoaded && this.state.showAd){
         this.showAd();
       }else{
@@ -334,6 +345,9 @@ export default class HomeScreen extends React.Component {
 
   onFlingRight = ({ nativeEvent }, offset) => {
     if (nativeEvent.oldState === State.ACTIVE) {
+      if(this.state.buttonDisabled){
+        return;
+      }
       if(this.state.adLoaded && this.state.showAd){
         this.showAd();
       }else{

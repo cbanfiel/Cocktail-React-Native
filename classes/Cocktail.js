@@ -32,11 +32,12 @@ export class Cocktail {
     getIngredients() {
         let str = '';
         for (let i = 0; i < this.ingredients.length; i++) {
-            if (this.ingredients[i].measurement != null) {
-                str += ` ${this.ingredients[i].measurement}`;
+
+            if (this.ingredients[i].measurement != null && this.ingredients[i].measurement.length > 0) {
+                str += `${this.ingredients[i].measurement}`;
             }
 
-            if (this.ingredients[i].ingredient != null) {
+            if (this.ingredients[i].ingredient != null && this.ingredients[i].ingredient.length > 0) {
                 str += ` ${this.ingredients[i].ingredient}\n`;
             } else {
                 break;
@@ -46,11 +47,11 @@ export class Cocktail {
     }
 
     getGlassString() {
-        return `You would typically enjoy this drink in a ${this.glassType.toLowerCase()}`
+        return `You would typically enjoy this drink in a ${this.glassType.toLowerCase()}`.replace('\n','')
     }
 
     getCategoryString() {
-        return `Category: ${this.category}`;
+        return `Category: ${this.category}`.replace('\n','');
     }
 
 

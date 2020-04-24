@@ -85,6 +85,18 @@ export default class HomeScreen extends React.Component {
     await AdMobInterstitial.showAdAsync();
   };
 
+  detectLineOverflow = () => {
+    let line = fontSizeP * 1.5
+    let cardHeight = verticalScale(405)
+    if(cardHeight> 500){
+      cardHeight = 500;
+    }
+
+    let textArea = cardHeight * 0.8
+
+    return Math.floor(textArea/line)
+  }
+
   loadAd = async () => {
     try {
       AdMobInterstitial.setAdUnitID(
@@ -403,7 +415,7 @@ export default class HomeScreen extends React.Component {
     cardSide: 0,
     prevDrinks: [],
     prevIndex: -1,
-    modalVisible: true,
+    modalVisible: false
   };
 
   endTutorial = () => {
@@ -449,55 +461,53 @@ export default class HomeScreen extends React.Component {
               height: "100%",
               width: "100%",
               flex: 1,
-              backgroundColor: '#ffffff',
-              paddingBottom: verticalScale(30)
+              backgroundColor: "#ffffff",
+              paddingBottom: verticalScale(30),
             }}
           >
-              <ScrollView style={{ height: "100%", width:'100%' }} contentContainerStyle={styles.modal}>
-                {this.state.cocktail != null ? (
-                  <View style={{ height: "100%" }}>
-                    <Text style={styles.h1}>{this.state.cocktail.name}</Text>
-                    <View style={{ borderBottomWidth: 0.5, margin: 5 }}></View>
+            <ScrollView
+              style={{flex:1}}
+              contentContainerStyle={styles.modal}
+            >
+              {this.state.cocktail != null ? (
+                <View style={{ paddingBottom: 50 }}>
+                  <Text style={styles.h1}>{this.state.cocktail.name}</Text>
+                  <View style={{ borderBottomWidth: 0.5, margin: 5 }}></View>
 
-                    <Image
-                            source={{ uri: this.state.cocktail.image }}
-                            style={{width: verticalScale(200), height: verticalScale(200), margin: 10, alignSelf:'center' }}
-                          ></Image>
-                    <Text style={styles.p}>
-                      {this.state.cocktail.getIngredients()}
-                    </Text>
-
-                    <Text style={styles.p}>
-                      {this.state.cocktail.instructions + "\n"}
-                    </Text>
-
-                    <Text style={styles.p}>
-                      {this.state.cocktail.getGlassString() + "\n"}
-                    </Text>
-                    <Text style={styles.p}>
-                      {this.state.cocktail.getCategoryString()}
-                    </Text>
-
-
-                  </View>
-                ) : null}
-              </ScrollView>
-              <TouchableOpacity
-            onPress={() => this.modalAction()}
-          >
-            <View style={[styles.newDrinkBtn]}>
-            <Icon
-                name="cancel"
-                type="material"
-                iconStyle={{
-                  color: this.state.newDrinkButtonDisabled ? "#666666" : "#333",
-                }}
-                size={verticalScale(22)}
-                containerStyle={{}}
-              />
-            </View>
-          </TouchableOpacity>
-            </View>
+                  <Image
+                    source={{ uri: this.state.cocktail.image }}
+                    style={{
+                      width: verticalScale(200),
+                      height: verticalScale(200),
+                      margin: 20,
+                      alignSelf: "center",
+                    }}
+                  ></Image>
+              <Text style={styles.p}>
+                            {this.state.cocktail.getIngredients() +
+                            "\n" + this.state.cocktail.instructions +
+                            "\n\n" + this.state.cocktail.getGlassString() +
+                            "\n\n" + this.state.cocktail.getCategoryString()}
+                          </Text>
+                </View>
+              ) : null}
+            </ScrollView>
+            <TouchableOpacity onPress={() => this.modalAction()} style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
+              <View style={[styles.newDrinkBtn]}>
+                <Icon
+                  name="cancel"
+                  type="material"
+                  iconStyle={{
+                    color: this.state.newDrinkButtonDisabled
+                      ? "#666666"
+                      : "#333",
+                  }}
+                  size={verticalScale(22)}
+                  containerStyle={{}}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
         </Modal>
         <View
           style={[
@@ -608,35 +618,44 @@ export default class HomeScreen extends React.Component {
                         </View>
                       ) : (
                         <View style={styles.card}>
-                          <Text style={styles.h1}>
+                          <View style={styles.cardTextContainer}>
+                          <Text style={[styles.h1]}>
                             {this.state.cocktail.name}
                           </Text>
                           <View
                             style={{ borderBottomWidth: 0.5, margin: 5 }}
                           ></View>
 
-                          <Text style={styles.p}>
-                            {this.state.cocktail.getIngredients()}
+                          <Text style={styles.p} numberOfLines={this.detectLineOverflow()}>
+                            {this.state.cocktail.getIngredients() +
+                            "\n" + this.state.cocktail.instructions +
+                            "\n\n" + this.state.cocktail.getGlassString() +
+                            "\n\n" + this.state.cocktail.getCategoryString()}
                           </Text>
 
-                          <Text style={styles.p}>
-                            {this.state.cocktail.instructions + "\n"}
-                          </Text>
+                          {/* <Text style={styles.p} numberOfLines={this.detectLineOverflow()}>
+                          Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+                          Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+                          
+                          </Text> */}
 
-                          <Text style={styles.p}>
-                            {this.state.cocktail.getGlassString() + "\n"}
-                          </Text>
-                          <Text style={styles.p}>
-                            {this.state.cocktail.getCategoryString()}
-                          </Text>
 
-                          <TouchableOpacity>
-                            <Text
-                              style={{ color: "blue" }}
-                              onPress={() => this.modalAction()}
-                            >
-                              Read More...
-                            </Text>
+                          </View>
+
+                          <TouchableOpacity
+                            onPress={() => this.modalAction()}
+                            style={{
+                              position: "absolute",
+                              bottom: 9,
+                              left: 0,
+                              margin: 10,
+                            }}
+                          >
+                            <View style={[styles.cardBtn, styles.raised]}>
+                              <Text style={styles.newDrinkBtnTxt}>
+                                {"Read More..."}
+                              </Text>
+                            </View>
                           </TouchableOpacity>
 
                           <Icon
@@ -654,7 +673,7 @@ export default class HomeScreen extends React.Component {
                               bottom: 0,
                               right: 0,
                               margin: 10,
-                            }}
+                            } }
                             onPress={() => this.favorite()}
                           />
                         </View>
@@ -774,6 +793,44 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
 
     elevation: 8,
+  },
+  raised: {
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      default: {
+        shadowColor: 'rgba(0,0,0, .4)',
+        shadowOffset: { height: 1, width: 1 },
+        shadowOpacity: 1,
+        shadowRadius: 1,
+      },
+    }),
+  },
+  cardBtn: {
+    flexDirection: "row",
+    backgroundColor: "#fefefe",
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    height: verticalScale(35),
+    width: verticalScale(35) * 5,
+    maxWidth: 220,
+    maxHeight: 220/5,
+    alignSelf: "center",
+    padding: 0,
+    shadowColor: "#000",
+  },
+  cardBtnShadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+
+    elevation: 5,
   },
   activityIndicator: {
     height: "100%",

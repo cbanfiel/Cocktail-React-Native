@@ -1,20 +1,15 @@
 import * as React from 'react';
-import { Platform, StatusBar, StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { SplashScreen } from 'expo';
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 
-import BottomTabNavigator from './navigation/BottomTabNavigator';
 import useLinking from './navigation/useLinking';
 import HomeScreen from './screens/HomeScreen';
 
-const Stack = createStackNavigator();
-
 export default function App(props) {
   const [isLoadingComplete, setLoadingComplete] = React.useState(false);
-  const [initialNavigationState, setInitialNavigationState] = React.useState();
+  const [setInitialNavigationState] = React.useState();
   const containerRef = React.useRef();
   const { getInitialState } = useLinking(containerRef);
 
@@ -53,19 +48,6 @@ export default function App(props) {
   } else {
     return (
       <View style={styles.container}>
-        {/* {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-        <NavigationContainer ref={containerRef} initialState={initialNavigationState}>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Root" component={BottomTabNavigator} options={
-              {
-                headerTitleStyle: {
-                  fontFamily: 'merriweather-light'
-                }
-              }
-            } />
-          </Stack.Navigator>
-        </NavigationContainer> */}
-
         <HomeScreen></HomeScreen>
       </View>
     );

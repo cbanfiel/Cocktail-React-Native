@@ -19,20 +19,19 @@ import * as FileSystem from "../classes/FileSystem";
 import { AdMobInterstitial } from "expo-ads-admob";
 import * as config from "../config";
 import ColorPalette from "../components/ColorPalette";
+import SearchBar from "../components/SearchBar";
 import Tutorial from "../components/Tutorial";
-import { scale, verticalScale, moderateScale } from "react-native-size-matters";
+import { verticalScale } from "react-native-size-matters";
 
 import {
   FlingGestureHandler,
   Directions,
   State,
-  TouchableHighlight,
 } from "react-native-gesture-handler";
 
 const colors = ["#ffd54f", "#66bb6a", "#4fc3f7", "#9575cd", "#ff5252"];
 
 const screenWidth = Math.round(Dimensions.get("window").width);
-const screenHeight = Math.round(Dimensions.get("window").height);
 
 let fontSizeP = verticalScale(11);
 let fontSizeH1 = verticalScale(15);
@@ -57,7 +56,7 @@ if (iconSize > 26) {
 }
 
 const DURATION = 500;
-const CARDS_UNTIL_AD_SHOWN = 9;
+const CARDS_UNTIL_AD_SHOWN = 7;
 
 export default class HomeScreen extends React.Component {
   componentDidMount = async () => {
@@ -86,16 +85,14 @@ export default class HomeScreen extends React.Component {
   };
 
   detectLineOverflow = () => {
-    let line = fontSizeP * 1.5
-    let cardHeight = verticalScale(405)
-    if(cardHeight> 500){
+    let line = fontSizeP * 1.5;
+    let cardHeight = verticalScale(405);
+    if (cardHeight > 500) {
       cardHeight = 500;
     }
-
-    let textArea = cardHeight * 0.8
-
-    return Math.floor(textArea/line)
-  }
+    let textArea = cardHeight * 0.8;
+    return Math.floor(textArea / line);
+  };
 
   loadAd = async () => {
     try {
@@ -415,7 +412,7 @@ export default class HomeScreen extends React.Component {
     cardSide: 0,
     prevDrinks: [],
     prevIndex: -1,
-    modalVisible: false
+    modalVisible: false,
   };
 
   endTutorial = () => {
@@ -466,7 +463,7 @@ export default class HomeScreen extends React.Component {
             }}
           >
             <ScrollView
-              style={{flex:1}}
+              style={{ flex: 1 }}
               contentContainerStyle={styles.modal}
             >
               {this.state.cocktail != null ? (
@@ -483,16 +480,22 @@ export default class HomeScreen extends React.Component {
                       alignSelf: "center",
                     }}
                   ></Image>
-              <Text style={styles.p}>
-                            {this.state.cocktail.getIngredients() +
-                            "\n" + this.state.cocktail.instructions +
-                            "\n\n" + this.state.cocktail.getGlassString() +
-                            "\n\n" + this.state.cocktail.getCategoryString()}
-                          </Text>
+                  <Text style={styles.p}>
+                    {this.state.cocktail.getIngredients() +
+                      "\n" +
+                      this.state.cocktail.instructions +
+                      "\n\n" +
+                      this.state.cocktail.getGlassString() +
+                      "\n\n" +
+                      this.state.cocktail.getCategoryString()}
+                  </Text>
                 </View>
               ) : null}
             </ScrollView>
-            <TouchableOpacity onPress={() => this.modalAction()} style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
+            <TouchableOpacity
+              onPress={() => this.modalAction()}
+              style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}
+            >
               <View style={[styles.newDrinkBtn]}>
                 <Icon
                   name="cancel"
@@ -522,6 +525,7 @@ export default class HomeScreen extends React.Component {
             colorIndex={this.state.colorIndex}
             setColorIndex={this.setColorIndex}
           />
+          <SearchBar/>
           <FlingGestureHandler
             direction={Directions.LEFT}
             onHandlerStateChange={(ev) => this.onFlingLeft(ev, -10)}
@@ -619,29 +623,25 @@ export default class HomeScreen extends React.Component {
                       ) : (
                         <View style={styles.card}>
                           <View style={styles.cardTextContainer}>
-                          <Text style={[styles.h1]}>
-                            {this.state.cocktail.name}
-                          </Text>
-                          <View
-                            style={{ borderBottomWidth: 0.5, margin: 5 }}
-                          ></View>
-
-                          <Text style={styles.p} numberOfLines={this.detectLineOverflow()}>
-                            {this.state.cocktail.getIngredients() +
-                            "\n" + this.state.cocktail.instructions +
-                            "\n\n" + this.state.cocktail.getGlassString() +
-                            "\n\n" + this.state.cocktail.getCategoryString()}
-                          </Text>
-
-                          {/* <Text style={styles.p} numberOfLines={this.detectLineOverflow()}>
-                          Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
-                          Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
-                          
-                          </Text> */}
-
-
+                            <Text style={[styles.h1]}>
+                              {this.state.cocktail.name}
+                            </Text>
+                            <View
+                              style={{ borderBottomWidth: 0.5, margin: 5 }}
+                            ></View>
+                            <Text
+                              style={styles.p}
+                              numberOfLines={this.detectLineOverflow()}
+                            >
+                              {this.state.cocktail.getIngredients() +
+                                "\n" +
+                                this.state.cocktail.instructions +
+                                "\n\n" +
+                                this.state.cocktail.getGlassString() +
+                                "\n\n" +
+                                this.state.cocktail.getCategoryString()}
+                            </Text>
                           </View>
-
                           <TouchableOpacity
                             onPress={() => this.modalAction()}
                             style={{
@@ -673,7 +673,7 @@ export default class HomeScreen extends React.Component {
                               bottom: 0,
                               right: 0,
                               margin: 10,
-                            } }
+                            }}
                             onPress={() => this.favorite()}
                           />
                         </View>
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
         elevation: 2,
       },
       default: {
-        shadowColor: 'rgba(0,0,0, .4)',
+        shadowColor: "rgba(0,0,0, .4)",
         shadowOffset: { height: 1, width: 1 },
         shadowOpacity: 1,
         shadowRadius: 1,
@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
     height: verticalScale(35),
     width: verticalScale(35) * 5,
     maxWidth: 220,
-    maxHeight: 220/5,
+    maxHeight: 220 / 5,
     alignSelf: "center",
     padding: 0,
     shadowColor: "#000",
